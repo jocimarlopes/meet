@@ -64,12 +64,14 @@ export class ChatService {
   readonly isActive = computed(() => this.status() !== 'idle');
   readonly canSend = computed(() => this.status() === 'connected');
 
-  /** Câmeras: a sua e a do outro lado, cada uma ligada de forma independente. */
-  readonly localStream = this.peerConnection.localStream;
-  readonly remoteStream = this.peerConnection.remoteStream;
-  readonly cameraOn = computed(() => this.localStream() !== null);
+  /** Câmera e microfone, dos dois lados, cada um ligado de forma independente. */
+  readonly localCamera = this.peerConnection.localCamera;
+  readonly remoteCamera = this.peerConnection.remoteCamera;
+  readonly remoteMic = this.peerConnection.remoteMic;
+  readonly cameraOn = computed(() => this.localCamera() !== null);
+  readonly micOn = computed(() => this.peerConnection.localMic() !== null);
   readonly anyVideo = computed(
-    () => this.localStream() !== null || this.remoteStream() !== null,
+    () => this.localCamera() !== null || this.remoteCamera() !== null,
   );
 
   private identity: Identity | null = null;
@@ -109,6 +111,21 @@ export class ChatService {
 
     this.peerConnection.state$.subscribe((state) => {
       this.onPeerConnectionState(state);
+    });
+
+    // Saber que o microfone do outro lado abriu importa: é a diferença entre
+    // estar sendo ouvido ou não.
+    this.peerConnection.remoteMediaChanges.subscribe(({ kind, active }) => {
+      const who = this.peerNick() ?? 'A outra pessoa';
+      if (kind === 'audio') {
+        this.pushSystem(
+          active ? `${who} abriu o microfone.` : `${who} desligou o microfone.`,
+        );
+      } else {
+        this.pushSystem(
+          active ? `${who} ligou a câmera.` : `${who} desligou a câmera.`,
+        );
+      }
     });
   }
 
@@ -161,12 +178,23 @@ export class ChatService {
    */
   async toggleCamera(): Promise<void> {
     if (this.cameraOn()) {
-      this.peerConnection.stopCamera();
+      this.peerConnection.stopMedia('video');
       this.pushSystem('Você desligou a câmera.');
       return;
     }
-    await this.peerConnection.startCamera();
+    await this.peerConnection.startMedia('video');
     this.pushSystem('Você ligou a câmera.');
+  }
+
+  /** Mesma mecânica da câmera, com o microfone. */
+  async toggleMic(): Promise<void> {
+    if (this.micOn()) {
+      this.peerConnection.stopMedia('audio');
+      this.pushSystem('Seu microfone está desligado.');
+      return;
+    }
+    await this.peerConnection.startMedia('audio');
+    this.pushSystem('Seu microfone está aberto — o outro lado ouve você.');
   }
 
   leave(): void {

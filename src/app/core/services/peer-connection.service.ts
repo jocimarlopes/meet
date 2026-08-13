@@ -11,12 +11,36 @@ export type PeerConnectionState =
   | 'disconnected'
   | 'failed';
 
+/** Câmera e microfone são ligados e desligados de forma independente. */
+export type MediaKind = 'video' | 'audio';
+
+export interface RemoteMediaChange {
+  kind: MediaKind;
+  active: boolean;
+}
+
 const CHANNEL_LABEL = 'chat';
+
+const CONSTRAINTS: Record<MediaKind, MediaStreamConstraints> = {
+  video: {
+    video: { width: { ideal: 640 }, height: { ideal: 480 } },
+    audio: false,
+  },
+  audio: {
+    // O cancelamento de eco do navegador evita realimentação em alto-falante.
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    },
+    video: false,
+  },
+};
 
 /**
  * O DataChannel carrega dois tipos de tráfego: as mensagens do chat (já
- * cifradas com PGP) e o SDP/ICE das renegociações — abrir a câmera depois que
- * a conversa começou é uma renegociação.
+ * cifradas com PGP) e o SDP/ICE das renegociações — abrir câmera ou microfone
+ * depois que a conversa começou é uma renegociação.
  *
  * Mandar isso pelo próprio canal direto, e não de volta pelo servidor, mantém
  * a promessa do desenho: depois do pareamento o backend sai de cena e não
@@ -30,14 +54,15 @@ type ChannelEnvelope =
  * Conexão WebRTC direta entre os dois navegadores.
  *
  * A negociação segue o padrão *perfect negotiation*: um lado é "educado" e
- * cede em caso de colisão. Sem isso, os dois abrindo a câmera ao mesmo tempo
+ * cede em caso de colisão. Sem isso, os dois ligando a câmera ao mesmo tempo
  * quebrariam a conexão.
  */
 @Injectable({ providedIn: 'root' })
 export class PeerConnectionService {
   private connection: RTCPeerConnection | null = null;
   private channel: RTCDataChannel | null = null;
-  private cameraSender: RTCRtpSender | null = null;
+
+  private readonly senders = new Map<MediaKind, RTCRtpSender>();
 
   /** ICE que chega antes do remote description ficar pronto. */
   private queuedCandidates: RTCIceCandidateInit[] = [];
@@ -51,11 +76,15 @@ export class PeerConnectionService {
   private readonly state = new BehaviorSubject<PeerConnectionState>('idle');
   private readonly inbound = new Subject<string>();
   private readonly outbound = new Subject<SignalPayload>();
+  private readonly remoteMedia = new Subject<RemoteMediaChange>();
 
-  /** Câmera local, quando ligada. */
-  readonly localStream = signal<MediaStream | null>(null);
-  /** Câmera do outro lado, quando ele liga a dele. */
-  readonly remoteStream = signal<MediaStream | null>(null);
+  /** Mídia local. O microfone não é reproduzido aqui — ninguém quer se ouvir. */
+  readonly localCamera = signal<MediaStream | null>(null);
+  readonly localMic = signal<MediaStream | null>(null);
+
+  /** Mídia do outro lado, cada uma ligada por ele de forma independente. */
+  readonly remoteCamera = signal<MediaStream | null>(null);
+  readonly remoteMic = signal<MediaStream | null>(null);
 
   get state$(): Observable<PeerConnectionState> {
     return this.state.asObservable();
@@ -78,8 +107,9 @@ export class PeerConnectionService {
     return this.outbound.asObservable();
   }
 
-  get cameraOn(): boolean {
-    return this.localStream() !== null;
+  /** O outro lado ligou ou desligou câmera/microfone. */
+  get remoteMediaChanges(): Observable<RemoteMediaChange> {
+    return this.remoteMedia.asObservable();
   }
 
   async start(role: 'host' | 'guest'): Promise<void> {
@@ -119,11 +149,13 @@ export class PeerConnectionService {
 
     connection.ontrack = ({ streams, track }) => {
       const stream = streams[0] ?? new MediaStream([track]);
-      this.remoteStream.set(stream);
+      const kind: MediaKind = track.kind === 'audio' ? 'audio' : 'video';
+
+      this.setRemote(kind, stream);
       // removeTrack do outro lado chega aqui como mute, não como novo evento.
-      track.onmute = () => this.remoteStream.set(null);
-      track.onunmute = () => this.remoteStream.set(stream);
-      track.onended = () => this.remoteStream.set(null);
+      track.onmute = () => this.setRemote(kind, null);
+      track.onunmute = () => this.setRemote(kind, stream);
+      track.onended = () => this.setRemote(kind, null);
     };
 
     connection.onconnectionstatechange = () => {
@@ -199,38 +231,37 @@ export class PeerConnectionService {
     }
   }
 
-  // -- câmera --------------------------------------------------------------
+  // -- câmera e microfone --------------------------------------------------
 
-  /** Liga a câmera e renegocia. Sem áudio, de propósito. */
-  async startCamera(): Promise<void> {
+  /** Liga a mídia local e renegocia. Vídeo nunca leva áudio junto. */
+  async startMedia(kind: MediaKind): Promise<void> {
     const connection = this.connection;
-    if (!connection || this.cameraSender) {
+    if (!connection || this.senders.has(kind)) {
       return;
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 640 }, height: { ideal: 480 } },
-      audio: false,
-    });
-
-    const [track] = stream.getVideoTracks();
+    const stream = await navigator.mediaDevices.getUserMedia(CONSTRAINTS[kind]);
+    const [track] = kind === 'audio' ? stream.getAudioTracks() : stream.getVideoTracks();
     if (!track) {
-      stream.getTracks().forEach((t) => t.stop());
-      throw new Error('Nenhuma câmera disponível.');
+      stream.getTracks().forEach((each) => each.stop());
+      throw new Error(
+        kind === 'audio' ? 'Nenhum microfone disponível.' : 'Nenhuma câmera disponível.',
+      );
     }
 
     // addTrack dispara negotiationneeded, que cuida da renegociação.
-    this.cameraSender = connection.addTrack(track, stream);
-    this.localStream.set(stream);
+    this.senders.set(kind, connection.addTrack(track, stream));
+    this.localSignal(kind).set(stream);
   }
 
-  stopCamera(): void {
-    const stream = this.localStream();
-    this.localStream.set(null);
+  stopMedia(kind: MediaKind): void {
+    const local = this.localSignal(kind);
+    const stream = local();
+    local.set(null);
     stream?.getTracks().forEach((track) => track.stop());
 
-    const sender = this.cameraSender;
-    this.cameraSender = null;
+    const sender = this.senders.get(kind);
+    this.senders.delete(kind);
     if (sender && this.connection) {
       try {
         this.connection.removeTrack(sender);
@@ -247,8 +278,10 @@ export class PeerConnectionService {
   }
 
   close(): void {
-    this.stopCamera();
-    this.remoteStream.set(null);
+    this.stopMedia('video');
+    this.stopMedia('audio');
+    this.remoteCamera.set(null);
+    this.remoteMic.set(null);
 
     this.queuedCandidates = [];
     this.makingOffer = false;
@@ -275,6 +308,24 @@ export class PeerConnectionService {
   }
 
   // -- internos ------------------------------------------------------------
+
+  private localSignal(kind: MediaKind) {
+    return kind === 'audio' ? this.localMic : this.localCamera;
+  }
+
+  private remoteSignal(kind: MediaKind) {
+    return kind === 'audio' ? this.remoteMic : this.remoteCamera;
+  }
+
+  private setRemote(kind: MediaKind, stream: MediaStream | null): void {
+    const target = this.remoteSignal(kind);
+    const wasActive = target() !== null;
+    target.set(stream);
+    // `onmute` pode disparar repetido; só avisa quando o estado muda de fato.
+    if (wasActive !== (stream !== null)) {
+      this.remoteMedia.next({ kind, active: stream !== null });
+    }
+  }
 
   /**
    * Enquanto o canal direto não existe, SDP e ICE saem pelo servidor. Depois

@@ -25,24 +25,36 @@ export class ChatPage {
   // caminho inverso, quando o stream muda com o elemento já na tela.
   @ViewChild('localVideo') set localVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
     this.localVideo = ref?.nativeElement;
-    this.bind(this.localVideo, this.chat.localStream());
+    this.bind(this.localVideo, this.chat.localCamera());
   }
 
   @ViewChild('remoteVideo') set remoteVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
     this.remoteVideo = ref?.nativeElement;
-    this.bind(this.remoteVideo, this.chat.remoteStream());
+    this.bind(this.remoteVideo, this.chat.remoteCamera());
+  }
+
+  /**
+   * O áudio remoto tem elemento próprio: o `<video>` é `muted` para garantir
+   * autoplay, então o som dele sairia silenciado.
+   */
+  @ViewChild('remoteAudio') set remoteAudioRef(ref: ElementRef<HTMLAudioElement> | undefined) {
+    this.remoteAudio = ref?.nativeElement;
+    this.bind(this.remoteAudio, this.chat.remoteMic());
   }
 
   private localVideo?: HTMLVideoElement;
   private remoteVideo?: HTMLVideoElement;
+  private remoteAudio?: HTMLAudioElement;
 
   draft = '';
   showFingerprints = false;
   cameraBusy = false;
+  micBusy = false;
 
   constructor() {
-    effect(() => this.bind(this.localVideo, this.chat.localStream()));
-    effect(() => this.bind(this.remoteVideo, this.chat.remoteStream()));
+    effect(() => this.bind(this.localVideo, this.chat.localCamera()));
+    effect(() => this.bind(this.remoteVideo, this.chat.remoteCamera()));
+    effect(() => this.bind(this.remoteAudio, this.chat.remoteMic()));
 
     // Sessão encerrada (saída, erro do servidor, F5): volta para o lobby.
     effect(() => {
@@ -96,35 +108,58 @@ export class ChatPage {
     try {
       await this.chat.toggleCamera();
     } catch (cause) {
-      await this.toast(this.cameraFailure(cause), 'danger');
+      await this.toast(this.mediaFailure(cause, 'câmera'), 'danger');
     } finally {
       this.cameraBusy = false;
     }
   }
 
-  /** Traduz o erro do getUserMedia para algo acionável. */
-  private cameraFailure(cause: unknown): string {
-    const name = cause instanceof DOMException ? cause.name : '';
-    if (name === 'NotAllowedError') {
-      return 'Permissão de câmera negada. Libere nas configurações do site.';
+  async toggleMic(): Promise<void> {
+    if (this.micBusy || !this.chat.canSend()) {
+      return;
     }
-    if (name === 'NotFoundError') {
-      return 'Nenhuma câmera encontrada neste dispositivo.';
+    this.micBusy = true;
+    try {
+      await this.chat.toggleMic();
+    } catch (cause) {
+      await this.toast(this.mediaFailure(cause, 'microfone'), 'danger');
+    } finally {
+      this.micBusy = false;
     }
-    if (name === 'NotReadableError') {
-      return 'A câmera está em uso por outro programa.';
-    }
-    return 'Não foi possível abrir a câmera.';
   }
 
-  private bind(element: HTMLVideoElement | undefined, stream: MediaStream | null): void {
+  /** Traduz o erro do getUserMedia para algo acionável. */
+  private mediaFailure(cause: unknown, device: string): string {
+    const name = cause instanceof DOMException ? cause.name : '';
+    if (name === 'NotAllowedError') {
+      return `Permissão de ${device} negada. Libere nas configurações do site.`;
+    }
+    if (name === 'NotFoundError') {
+      return `Nenhum dispositivo de ${device} encontrado.`;
+    }
+    if (name === 'NotReadableError') {
+      return `O ${device} está em uso por outro programa.`;
+    }
+    return `Não foi possível abrir o ${device}.`;
+  }
+
+  private bind(
+    element: HTMLMediaElement | undefined,
+    stream: MediaStream | null,
+  ): void {
     if (!element || element.srcObject === stream) {
       return;
     }
     element.srcObject = stream;
-    if (stream) {
-      void element.play().catch(() => undefined);
+    if (!stream) {
+      return;
     }
+    void element.play().catch(() => {
+      // Só o áudio esbarra na política de autoplay; o vídeo é muted.
+      if (element instanceof HTMLAudioElement) {
+        void this.toast('Toque na tela para liberar o áudio da conversa.', 'warning');
+      }
+    });
   }
 
   async copyRoomId(): Promise<void> {

@@ -6,6 +6,17 @@
     </ion-title>
     <ion-buttons slot="end">
       <ion-button
+        [disabled]="!chat.canSend() || micBusy"
+        (click)="toggleMic()"
+        [title]="chat.micOn() ? 'Fechar microfone' : 'Abrir microfone'"
+      >
+        <ion-icon
+          slot="icon-only"
+          [color]="chat.micOn() ? 'primary' : undefined"
+          [name]="chat.micOn() ? 'mic' : 'mic-off-outline'"
+        ></ion-icon>
+      </ion-button>
+      <ion-button
         [disabled]="!chat.canSend() || cameraBusy"
         (click)="toggleCamera()"
         [title]="chat.cameraOn() ? 'Desligar câmera' : 'Ligar câmera'"
@@ -35,15 +46,23 @@
   </ion-toolbar>
 </ion-header>
 
+<!-- Fora do painel de vídeo: o som toca mesmo com a câmera de todos desligada. -->
+<audio #remoteAudio autoplay *ngIf="chat.remoteMic()"></audio>
+
 <div class="video-panel" *ngIf="chat.anyVideo()">
   <div class="remote">
     <video #remoteVideo autoplay playsinline muted></video>
-    <span class="idle-camera" *ngIf="!chat.remoteStream()">
+    <span class="idle-camera" *ngIf="!chat.remoteCamera()">
       {{ chat.peerNick() }} está com a câmera desligada
     </span>
   </div>
 
-  <video class="local" #localVideo autoplay playsinline muted *ngIf="chat.localStream()"></video>
+  <video class="local" #localVideo autoplay playsinline muted *ngIf="chat.localCamera()"></video>
+</div>
+
+<div class="live-audio" *ngIf="chat.remoteMic() && !chat.anyVideo()">
+  <ion-icon name="volume-high-outline"></ion-icon>
+  {{ chat.peerNick() }} está com o microfone aberto
 </div>
 
 <ion-content class="ion-padding">
