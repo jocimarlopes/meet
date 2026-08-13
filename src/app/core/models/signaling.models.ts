@@ -43,6 +43,8 @@ export interface JoinRoomMessage {
 
 export interface SignalMessage {
   type: 'signal';
+  /** Numa malha, "o outro" é ambíguo: o destinatário é explícito. */
+  to: string;
   data: SignalPayload;
 }
 
@@ -73,7 +75,8 @@ export interface RoomJoinedMessage {
   type: 'room_joined';
   room: RoomView;
   self: PeerView;
-  peer: PeerView | null;
+  /** Quem já estava na sala — um por conexão a abrir. */
+  peers: PeerView[];
 }
 
 export interface PeerJoinedMessage {
@@ -124,4 +127,9 @@ export const NICK_PATTERN = /^[\w][\w .-]{1,23}$/u;
 
 export function isValidNick(nick: string): boolean {
   return NICK_PATTERN.test(nick.trim());
+}
+
+/** Mesma forma canônica do backend, usada para comparar nicks. */
+export function normalizeNick(nick: string): string {
+  return nick.trim().split(/\s+/).join(' ').toLocaleLowerCase();
 }

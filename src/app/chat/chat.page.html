@@ -27,8 +27,7 @@
           [name]="chat.cameraOn() ? 'videocam' : 'videocam-outline'"
         ></ion-icon>
       </ion-button>
-      <ion-button
-        (click)="sound.toggleMute()"
+      <ion-button (click)="sound.toggleMute()"
         [title]="sound.muted() ? 'Ativar avisos sonoros' : 'Silenciar avisos sonoros'"
       >
         <ion-icon
@@ -46,23 +45,37 @@
   </ion-toolbar>
 </ion-header>
 
-<!-- Fora do painel de vídeo: o som toca mesmo com a câmera de todos desligada. -->
-<audio #remoteAudio autoplay *ngIf="chat.remoteMic()"></audio>
+<!-- Um elemento de áudio por participante: o som toca com todas as câmeras
+     desligadas, e o <video> é mudo para garantir o autoplay. -->
+<audio
+  *ngFor="let entry of chat.remoteMicList(); trackBy: trackByNick"
+  [attr.data-nick]="entry.nick"
+  autoplay
+  [srcObjectRef]="entry.stream"
+  (playbackBlocked)="onAudioBlocked()"
+></audio>
 
 <div class="video-panel" *ngIf="chat.anyVideo()">
-  <div class="remote">
-    <video #remoteVideo autoplay playsinline muted></video>
-    <span class="idle-camera" *ngIf="!chat.remoteCamera()">
-      {{ chat.peerNick() }} está com a câmera desligada
-    </span>
+  <div class="grid" [attr.data-count]="chat.remoteCameraList().length">
+    <div class="tile" *ngFor="let entry of chat.remoteCameraList(); trackBy: trackByNick">
+      <video autoplay playsinline muted [srcObjectRef]="entry.stream"></video>
+      <span class="who">{{ entry.nick }}</span>
+    </div>
+
+    <p class="idle-camera" *ngIf="chat.remoteCameraList().length === 0">
+      Ninguém mais está com a câmera ligada
+    </p>
   </div>
 
-  <video class="local" #localVideo autoplay playsinline muted *ngIf="chat.localCamera()"></video>
+  <video class="local" autoplay playsinline muted
+    *ngIf="chat.localCamera() as stream"
+    [srcObjectRef]="stream"
+  ></video>
 </div>
 
-<div class="live-audio" *ngIf="chat.remoteMic() && !chat.anyVideo()">
+<div class="live-audio" *ngIf="chat.remoteMicList().length > 0 && !chat.anyVideo()">
   <ion-icon name="volume-high-outline"></ion-icon>
-  {{ chat.peerNick() }} está com o microfone aberto
+  {{ micLabel }}
 </div>
 
 <ion-content class="ion-padding">
@@ -72,34 +85,37 @@
     </ion-card-header>
     <ion-card-content>
       <p class="warning">
-        Quem entrega a chave do outro lado é o servidor. Confirme estes códigos
-        por outro meio (ligação, presencialmente) para ter certeza de que
-        ninguém está no meio.
+        Quem entrega as chaves é o servidor. Confirme estes códigos por outro
+        meio (ligação, presencialmente) para ter certeza de que ninguém está no
+        meio.
       </p>
       <div class="fingerprint">
         <span class="who">{{ chat.myNick() }} (você)</span>
         <code>{{ chat.formatFingerprint(chat.myFingerprint()) }}</code>
       </div>
-      <div class="fingerprint" *ngIf="chat.peerFingerprint()">
-        <span class="who">{{ chat.peerNick() }}</span>
-        <code>{{ chat.formatFingerprint(chat.peerFingerprint()) }}</code>
+      <div class="fingerprint" *ngFor="let peer of chat.participants(); trackBy: trackByPeer">
+        <span class="who">
+          {{ peer.nick }}
+          <ion-note *ngIf="!peer.connected">(conectando…)</ion-note>
+        </span>
+        <code>{{ chat.formatFingerprint(peer.fingerprint) }}</code>
       </div>
     </ion-card-content>
   </ion-card>
 
   <div class="waiting" *ngIf="chat.status() === 'waiting'">
     <ion-spinner name="dots"></ion-spinner>
-    <h2>Convite pronto</h2>
-    <p>Mande este código para quem você quer na conversa:</p>
+    <h2>{{ chat.participants().length ? 'Sala aberta' : 'Convite pronto' }}</h2>
+    <p>Mande este link para quem você quer na conversa:</p>
 
-    <button class="invite" type="button" (click)="copyRoomId()">
-      <code>{{ chat.room()?.id }}</code>
+    <button class="invite" type="button" (click)="copyInviteLink()">
+      <span class="link">{{ inviteLink }}</span>
       <ion-icon name="copy-outline"></ion-icon>
     </button>
 
     <p class="caveat">
-      Só quem tiver o código entra. Mantenha esta aba aberta — a sala existe
-      enquanto ela estiver de pé.
+      Quem abrir o link escolhe um apelido e entra direto. Cabem
+      {{ chat.room()?.capacity }} pessoas na sala; mantenha esta aba aberta.
     </p>
   </div>
 

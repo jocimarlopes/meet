@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
 
 import { isValidNick } from '../core/models/signaling.models';
@@ -17,10 +17,13 @@ export class HomePage {
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastController);
   private readonly sound = inject(SoundService);
+  private readonly route = inject(ActivatedRoute);
 
   nick = '';
   inviteCode = '';
   busy = false;
+  /** Chegou por link de convite: só falta o apelido. */
+  invited = false;
 
   get nickIsValid(): boolean {
     return isValidNick(this.nick);
@@ -38,6 +41,12 @@ export class HomePage {
     // Uma sessão anterior pode ter ficado pendurada ao voltar para cá.
     this.chat.leave();
     void this.showPendingError();
+
+    const code = this.route.snapshot.paramMap.get('code');
+    if (code) {
+      this.inviteCode = code;
+      this.invited = true;
+    }
   }
 
   async createRoom(): Promise<void> {

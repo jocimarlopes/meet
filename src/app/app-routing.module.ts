@@ -11,6 +11,11 @@ const routes: Routes = [
     loadChildren: () => import('./chat/chat.module').then((m) => m.ChatPageModule),
   },
   {
+    // Link de convite: cai na mesma tela, já com o código preenchido.
+    path: 'entrar/:code',
+    loadChildren: () => import('./home/home.module').then((m) => m.HomePageModule),
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full',

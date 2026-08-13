@@ -31,7 +31,7 @@ describe('PgpService', () => {
 
   it('faz o ciclo cifrar/decifrar entre os dois peers', async () => {
     const text = 'segredo com acento e emoji 🔐';
-    const armored = await pgp.encryptFor(ana, bobAsPeer, text);
+    const armored = await pgp.encryptFor(ana, [bobAsPeer], text);
 
     expect(armored).toContain('BEGIN PGP MESSAGE');
     expect(armored).not.toContain('segredo');
@@ -41,19 +41,44 @@ describe('PgpService', () => {
     expect(decrypted.verified).toBeTrue();
   });
 
+  it('um bloco só atende a sala inteira', async () => {
+    const carol = await pgp.generateIdentity('carol');
+    const carolAsPeer = await pgp.importPeerKey('carol', carol.publicKeyArmored);
+
+    // A mesma mensagem cifrada para os dois: cada um abre com a sua chave.
+    const armored = await pgp.encryptFor(ana, [bobAsPeer, carolAsPeer], 'oi turma');
+
+    for (const recipient of [bob, carol]) {
+      const decrypted = await pgp.decryptFrom(recipient, anaAsPeer, armored);
+      expect(decrypted.text).toEqual('oi turma');
+      expect(decrypted.verified).toBeTrue();
+    }
+  });
+
+  it('quem não está entre os destinatários não abre a mensagem', async () => {
+    const forasteiro = await pgp.generateIdentity('forasteiro');
+    const armored = await pgp.encryptFor(ana, [bobAsPeer], 'só para o bob');
+
+    await expectAsync(pgp.decryptFrom(forasteiro, anaAsPeer, armored)).toBeRejected();
+  });
+
   it('não decifra mensagem destinada a outra pessoa', async () => {
-    const armored = await pgp.encryptFor(ana, bobAsPeer, 'só para o bob');
+    const armored = await pgp.encryptFor(ana, [bobAsPeer], 'só para o bob');
     await expectAsync(pgp.decryptFrom(ana, bobAsPeer, armored)).toBeRejected();
   });
 
   it('marca como não verificada a mensagem assinada por um terceiro', async () => {
     const impostor = await pgp.generateIdentity('impostor');
-    const armored = await pgp.encryptFor(impostor, bobAsPeer, 'oi, sou a ana');
+    const armored = await pgp.encryptFor(impostor, [bobAsPeer], 'oi, sou a ana');
 
     // Bob decifra achando que veio da Ana: o texto sai, mas sem selo.
     const decrypted = await pgp.decryptFrom(bob, anaAsPeer, armored);
     expect(decrypted.text).toEqual('oi, sou a ana');
     expect(decrypted.verified).toBeFalse();
+  });
+
+  it('recusa cifrar sem destinatário', async () => {
+    await expectAsync(pgp.encryptFor(ana, [], 'para o vazio')).toBeRejected();
   });
 
   it('formata a impressão digital em blocos legíveis', () => {

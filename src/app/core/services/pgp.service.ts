@@ -70,15 +70,24 @@ export class PgpService {
     return { nick, publicKey, fingerprint: publicKey.getFingerprint() };
   }
 
-  /** Cifra para o peer e assina com a própria chave. */
+  /**
+   * Cifra para todos os destinatários de uma vez e assina com a própria chave.
+   *
+   * O OpenPGP cifra a mesma mensagem para várias chaves num bloco só, então a
+   * sala inteira recebe bytes idênticos e cada um abre com a sua chave — não é
+   * preciso cifrar uma vez por participante.
+   */
   async encryptFor(
     identity: Identity,
-    peer: PeerIdentity,
+    peers: PeerIdentity[],
     text: string,
   ): Promise<string> {
+    if (peers.length === 0) {
+      throw new Error('Ninguém para receber a mensagem.');
+    }
     return (await encrypt({
       message: await createMessage({ text }),
-      encryptionKeys: peer.publicKey,
+      encryptionKeys: peers.map((peer) => peer.publicKey),
       signingKeys: identity.privateKey,
       format: 'armored',
     })) as string;

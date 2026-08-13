@@ -1,15 +1,14 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
 import {
+  PeerView,
   RoomView,
   ServerMessage,
-  SignalPayload,
+  normalizeNick,
 } from '../models/signaling.models';
+import { MeshService } from './mesh.service';
+import { MediaKind } from './peer-link';
 import { Identity, PeerIdentity, PgpService } from './pgp.service';
-import {
-  PeerConnectionService,
-  PeerConnectionState,
-} from './peer-connection.service';
 import { SignalingService } from './signaling.service';
 import { SoundService } from './sound.service';
 
@@ -27,27 +26,34 @@ export interface ChatMessage {
   nick: string;
   text: string;
   at: Date;
-  /** Assinatura PGP conferida — só relevante em mensagens do peer. */
+  /** Assinatura PGP conferida — só relevante em mensagens de outros. */
   verified: boolean;
+}
+
+/** Um participante como a tela precisa vê-lo. */
+export interface Participant {
+  nick: string;
+  fingerprint: string;
+  connected: boolean;
 }
 
 const MAX_RECONNECT_ATTEMPTS = 3;
 const RECONNECT_DELAY_MS = 1_500;
 
 /**
- * Orquestra a sessão: gera as chaves, fala com o signaling até o WebRTC subir,
- * e daí em diante cifra/decifra tudo que passa pelo canal direto.
+ * Orquestra a sessão: gera as chaves, fala com o signaling e mantém a malha de
+ * conexões diretas, cifrando e decifrando tudo que passa por ela.
  *
- * Limite de confiança: o servidor de signaling é quem entrega a chave pública
- * do outro lado. Um servidor malicioso poderia entregar a chave dele e ficar no
- * meio. Por isso as duas pontas exibem a impressão digital — comparar por fora
- * (voz, outro app) é o que fecha esse buraco.
+ * Limite de confiança: o servidor é quem entrega as chaves públicas. Um
+ * servidor malicioso poderia entregar a dele e ficar no meio. Por isso as
+ * impressões digitais ficam visíveis — compará-las por fora é o que fecha esse
+ * buraco.
  */
 @Injectable({ providedIn: 'root' })
 export class ChatService {
   private readonly pgp = inject(PgpService);
   private readonly signaling = inject(SignalingService);
-  private readonly peerConnection = inject(PeerConnectionService);
+  private readonly mesh = inject(MeshService);
   private readonly sound = inject(SoundService);
 
   readonly status = signal<SessionStatus>('idle');
@@ -58,32 +64,39 @@ export class ChatService {
 
   readonly myNick = signal<string | null>(null);
   readonly myFingerprint = signal<string | null>(null);
-  readonly peerNick = signal<string | null>(null);
-  readonly peerFingerprint = signal<string | null>(null);
+  readonly participants = signal<Participant[]>([]);
 
   readonly isActive = computed(() => this.status() !== 'idle');
-  readonly canSend = computed(() => this.status() === 'connected');
+  readonly connectedCount = computed(
+    () => this.participants().filter((p) => p.connected).length,
+  );
+  readonly canSend = computed(() => this.connectedCount() > 0);
 
-  /** Câmera e microfone, dos dois lados, cada um ligado de forma independente. */
-  readonly localCamera = this.peerConnection.localCamera;
-  readonly remoteCamera = this.peerConnection.remoteCamera;
-  readonly remoteMic = this.peerConnection.remoteMic;
+  /** Câmera e microfone: os seus e os dos outros, por nick. */
+  readonly localCamera = this.mesh.localCamera;
+  readonly remoteCameras = this.mesh.remoteCameras;
+  readonly remoteMics = this.mesh.remoteMics;
   readonly cameraOn = computed(() => this.localCamera() !== null);
-  readonly micOn = computed(() => this.peerConnection.localMic() !== null);
+  readonly micOn = computed(() => this.mesh.localMic() !== null);
+  readonly remoteCameraList = computed(() =>
+    Object.entries(this.remoteCameras()).map(([nick, stream]) => ({ nick, stream })),
+  );
+  readonly remoteMicList = computed(() =>
+    Object.entries(this.remoteMics()).map(([nick, stream]) => ({ nick, stream })),
+  );
   readonly anyVideo = computed(
-    () => this.localCamera() !== null || this.remoteCamera() !== null,
+    () => this.localCamera() !== null || this.remoteCameraList().length > 0,
   );
 
   private identity: Identity | null = null;
-  private peer: PeerIdentity | null = null;
+  private readonly peers = new Map<string, PeerIdentity>();
   private closingOnPurpose = false;
   private reconnectAttempts = 0;
 
   /**
-   * Handlers assíncronos entram em fila para rodar em ordem. Sem isso, a
-   * oferta SDP poderia ser processada antes de `room_joined` terminar de
-   * montar a RTCPeerConnection (e seria descartada), e mensagens decifradas
-   * poderiam aparecer fora de ordem.
+   * Handlers assíncronos entram em fila para rodar em ordem. Sem isso, uma
+   * oferta SDP poderia ser processada antes de a conexão estar montada, e
+   * mensagens decifradas poderiam aparecer fora de ordem.
    */
   private serverQueue: Promise<void> = Promise.resolve();
   private inboundQueue: Promise<void> = Promise.resolve();
@@ -99,33 +112,24 @@ export class ChatService {
       void this.onSignalingDropped();
     });
 
-    this.peerConnection.outboundSignals.subscribe((data) => {
-      this.forwardSignal(data);
+    this.mesh.signals.subscribe(({ to, payload }) => {
+      if (this.signaling.isOpen) {
+        this.signaling.send({ type: 'signal', to, data: payload });
+      }
     });
 
-    this.peerConnection.inboundData.subscribe((payload) => {
+    this.mesh.data.subscribe(({ from, payload }) => {
       this.inboundQueue = this.inboundQueue
-        .then(() => this.onEncryptedPayload(payload))
+        .then(() => this.onEncryptedPayload(from, payload))
         .catch((cause: unknown) => this.onHandlerFailure(cause));
     });
 
-    this.peerConnection.state$.subscribe((state) => {
-      this.onPeerConnectionState(state);
+    this.mesh.linkStates.subscribe(({ nick, state }) => {
+      this.onLinkState(nick, state);
     });
 
-    // Saber que o microfone do outro lado abriu importa: é a diferença entre
-    // estar sendo ouvido ou não.
-    this.peerConnection.remoteMediaChanges.subscribe(({ kind, active }) => {
-      const who = this.peerNick() ?? 'A outra pessoa';
-      if (kind === 'audio') {
-        this.pushSystem(
-          active ? `${who} abriu o microfone.` : `${who} desligou o microfone.`,
-        );
-      } else {
-        this.pushSystem(
-          active ? `${who} ligou a câmera.` : `${who} desligou a câmera.`,
-        );
-      }
+    this.mesh.remoteMediaAnnouncements.subscribe(({ nick, kind, active }) => {
+      this.announceMedia(nick, kind, active);
     });
   }
 
@@ -157,12 +161,14 @@ export class ChatService {
 
   async send(text: string): Promise<void> {
     const trimmed = text.trim();
-    if (!trimmed || !this.identity || !this.peer) {
+    const recipients = this.connectedPeers();
+    if (!trimmed || !this.identity || recipients.length === 0) {
       return;
     }
 
-    const armored = await this.pgp.encryptFor(this.identity, this.peer, trimmed);
-    this.peerConnection.send(armored);
+    // Um bloco só, cifrado para todos: a sala inteira recebe bytes idênticos.
+    const armored = await this.pgp.encryptFor(this.identity, recipients, trimmed);
+    this.mesh.broadcast(armored);
     this.push({
       kind: 'mine',
       nick: this.identity.nick,
@@ -171,30 +177,18 @@ export class ChatService {
     });
   }
 
-  /**
-   * Liga ou desliga a própria câmera. Abrir a câmera no meio da conversa é uma
-   * renegociação WebRTC, que trafega pelo canal direto — o servidor não volta
-   * a participar.
-   */
   async toggleCamera(): Promise<void> {
-    if (this.cameraOn()) {
-      this.peerConnection.stopMedia('video');
-      this.pushSystem('Você desligou a câmera.');
-      return;
-    }
-    await this.peerConnection.startMedia('video');
-    this.pushSystem('Você ligou a câmera.');
+    await this.toggleMedia('video', 'câmera');
   }
 
-  /** Mesma mecânica da câmera, com o microfone. */
   async toggleMic(): Promise<void> {
     if (this.micOn()) {
-      this.peerConnection.stopMedia('audio');
+      this.mesh.stopMedia('audio');
       this.pushSystem('Seu microfone está desligado.');
       return;
     }
-    await this.peerConnection.startMedia('audio');
-    this.pushSystem('Seu microfone está aberto — o outro lado ouve você.');
+    await this.mesh.startMedia('audio');
+    this.pushSystem('Seu microfone está aberto — a sala ouve você.');
   }
 
   leave(): void {
@@ -203,7 +197,7 @@ export class ChatService {
       this.signaling.send({ type: 'leave' });
     }
     this.signaling.disconnect();
-    this.peerConnection.close();
+    this.mesh.closeAll();
     this.reset();
   }
 
@@ -227,74 +221,57 @@ export class ChatService {
       case 'room_joined':
         this.room.set(message.room);
         this.reconnectAttempts = 0;
-        if (message.peer) {
-          await this.adoptPeer(message.peer.nick, message.peer.public_key);
-          // O host é quem faz a oferta; aqui só preparamos para recebê-la.
-          await this.peerConnection.start('guest');
+        // Quem entra apenas responde às ofertas de quem já estava.
+        for (const peer of message.peers) {
+          await this.adoptPeer(peer, { offerer: false });
+        }
+        this.status.set(message.peers.length > 0 ? 'connecting' : 'waiting');
+        break;
+
+      case 'peer_joined':
+        // Quem já estava é quem oferta ao recém-chegado.
+        await this.adoptPeer(message.peer, { offerer: true });
+        this.sound.peerJoined();
+        this.pushSystem(`${message.peer.nick} entrou na sala.`);
+        if (this.status() === 'waiting') {
           this.status.set('connecting');
         }
         break;
 
-      case 'peer_joined':
-        await this.adoptPeer(message.peer.nick, message.peer.public_key);
-        this.sound.peerJoined();
-        this.status.set('connecting');
-        await this.peerConnection.start('host');
-        break;
-
       case 'signal':
-        await this.peerConnection.acceptSignal(message.data);
+        await this.mesh.acceptSignal(message.from, message.data);
         break;
 
       case 'peer_left':
-        // Assim que o P2P sobe, os dois lados fecham o signaling — mas não no
-        // mesmo instante. Quem fecha primeiro gera um `peer_left` para o outro,
-        // que ainda está ouvindo. Ignorar aqui evita derrubar uma conexão
-        // direta que está funcionando; a saída real chega pela queda do
-        // próprio DataChannel.
-        if (this.status() === 'connected') {
-          break;
+        // Com o canal direto de pé, a saída real chega pela queda dele. Este
+        // aviso pode ser só a reconexão do signaling do outro lado.
+        if (!this.mesh.isConnected(message.nick)) {
+          this.dropPeer(message.nick, `${message.nick} saiu da sala.`);
         }
-        this.peerConnection.close();
-        this.peer = null;
-        this.peerNick.set(null);
-        this.peerFingerprint.set(null);
-        this.pushSystem(`${message.nick} saiu da sala.`);
-        this.status.set(this.role() === 'host' ? 'waiting' : 'ended');
         break;
 
       case 'error':
         this.error.set(message.message);
         this.closingOnPurpose = true;
         this.signaling.disconnect();
-        this.peerConnection.close();
+        this.mesh.closeAll();
         this.reset();
         break;
     }
   }
 
-  private forwardSignal(data: SignalPayload): void {
-    if (!this.signaling.isOpen) {
-      return;
-    }
-    this.signaling.send({ type: 'signal', data });
-  }
-
   /**
-   * A Vercel derruba o WebSocket ao bater o maxDuration. Se isso acontecer
-   * antes do P2P subir, refaz o registro na mesma sala.
+   * A Vercel derruba o WebSocket ao bater o maxDuration. Ele precisa voltar:
+   * é por ele que chegam os avisos de quem entra depois.
    */
   private async onSignalingDropped(): Promise<void> {
-    if (this.closingOnPurpose) {
-      return;
-    }
-    const status = this.status();
-    if (status !== 'waiting' && status !== 'connecting' && status !== 'preparing') {
+    if (this.closingOnPurpose || this.status() === 'idle') {
       return;
     }
     if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      this.error.set('Conexão com o servidor de signaling perdida.');
-      this.status.set('ended');
+      this.pushSystem(
+        'Sem contato com o servidor: quem entrar agora não vai aparecer aqui.',
+      );
       return;
     }
 
@@ -330,59 +307,113 @@ export class ChatService {
     }
   }
 
-  // -- WebRTC + PGP --------------------------------------------------------
+  // -- malha ---------------------------------------------------------------
 
-  private onHandlerFailure(cause: unknown): void {
-    console.error('falha ao processar evento da sessão', cause);
-    this.pushSystem('Algo deu errado ao processar um evento da conexão.');
-  }
+  private onLinkState(nick: string, state: string): void {
+    this.refreshParticipants();
 
-  private onPeerConnectionState(state: PeerConnectionState): void {
     if (state === 'connected') {
       this.status.set('connected');
-      this.pushSystem(
-        'Canal direto aberto e cifrado. Compare a impressão digital com a outra pessoa antes de falar algo sensível.',
-      );
-      // O servidor não é mais necessário: daqui em diante é só P2P.
-      this.closingOnPurpose = true;
-      this.signaling.disconnect();
+      if (this.participants().length === 1) {
+        this.pushSystem(
+          'Canal direto aberto e cifrado. Compare as impressões digitais antes de falar algo sensível.',
+        );
+      }
       return;
     }
 
-    // Com o signaling já fechado, a saída do outro lado chega como queda do
-    // canal direto — não como `peer_left`.
-    if ((state === 'disconnected' || state === 'failed') && this.status() === 'connected') {
-      const who = this.peerNick() ?? 'A outra pessoa';
-      this.pushSystem(
+    if (state === 'closed' || state === 'failed') {
+      this.dropPeer(
+        nick,
         state === 'failed'
-          ? 'A conexão direta falhou. Pode ser NAT restritivo — configure um servidor TURN.'
-          : `${who} saiu ou perdeu a conexão.`,
+          ? `A conexão direta com ${nick} falhou. Pode ser NAT restritivo — configure um servidor TURN.`
+          : `${nick} saiu da conversa.`,
       );
-      this.status.set('ended');
     }
   }
 
-  private async onEncryptedPayload(armored: string): Promise<void> {
-    if (!this.identity || !this.peer) {
+  private async onEncryptedPayload(from: string, armored: string): Promise<void> {
+    const sender = this.peers.get(normalizeNick(from));
+    if (!this.identity || !sender) {
       return;
     }
     try {
       const { text, verified } = await this.pgp.decryptFrom(
         this.identity,
-        this.peer,
+        sender,
         armored,
       );
-      this.push({ kind: 'theirs', nick: this.peer.nick, text, verified });
+      this.push({ kind: 'theirs', nick: sender.nick, text, verified });
       this.sound.messageReceived();
     } catch {
-      this.pushSystem('Chegou uma mensagem que não foi possível decifrar.');
+      this.pushSystem(`Chegou de ${from} uma mensagem que não foi possível decifrar.`);
     }
   }
 
-  private async adoptPeer(nick: string, armoredKey: string): Promise<void> {
-    this.peer = await this.pgp.importPeerKey(nick, armoredKey);
-    this.peerNick.set(this.peer.nick);
-    this.peerFingerprint.set(this.peer.fingerprint);
+  private async adoptPeer(peer: PeerView, options: { offerer: boolean }): Promise<void> {
+    const key = normalizeNick(peer.nick);
+    // Reconexão do signaling reanuncia quem já está conectado; não refaz nada.
+    if (this.mesh.has(peer.nick) && this.peers.has(key)) {
+      return;
+    }
+
+    this.peers.set(key, await this.pgp.importPeerKey(peer.nick, peer.public_key));
+    this.mesh.open(peer.nick, options.offerer);
+    this.refreshParticipants();
+  }
+
+  private dropPeer(nick: string, notice: string): void {
+    const key = normalizeNick(nick);
+    if (!this.peers.has(key)) {
+      return;
+    }
+    this.peers.delete(key);
+    this.mesh.close(nick);
+    this.pushSystem(notice);
+    this.refreshParticipants();
+
+    if (this.peers.size === 0) {
+      this.status.set(this.role() === 'host' ? 'waiting' : 'ended');
+    }
+  }
+
+  private refreshParticipants(): void {
+    this.participants.set(
+      [...this.peers.values()].map((peer) => ({
+        nick: peer.nick,
+        fingerprint: peer.fingerprint,
+        connected: this.mesh.isConnected(peer.nick),
+      })),
+    );
+  }
+
+  private connectedPeers(): PeerIdentity[] {
+    return [...this.peers.values()].filter((peer) => this.mesh.isConnected(peer.nick));
+  }
+
+  private announceMedia(nick: string, kind: MediaKind, active: boolean): void {
+    if (kind === 'audio') {
+      this.pushSystem(
+        active ? `${nick} abriu o microfone.` : `${nick} desligou o microfone.`,
+      );
+    } else {
+      this.pushSystem(active ? `${nick} ligou a câmera.` : `${nick} desligou a câmera.`);
+    }
+  }
+
+  private async toggleMedia(kind: MediaKind, label: string): Promise<void> {
+    if (this.mesh.isMediaOn(kind)) {
+      this.mesh.stopMedia(kind);
+      this.pushSystem(`Você desligou a ${label}.`);
+      return;
+    }
+    await this.mesh.startMedia(kind);
+    this.pushSystem(`Você ligou a ${label}.`);
+  }
+
+  private onHandlerFailure(cause: unknown): void {
+    console.error('falha ao processar evento da sessão', cause);
+    this.pushSystem('Algo deu errado ao processar um evento da conexão.');
   }
 
   // -- estado --------------------------------------------------------------
@@ -400,7 +431,7 @@ export class ChatService {
 
   private reset(): void {
     this.identity = null;
-    this.peer = null;
+    this.peers.clear();
     this.reconnectAttempts = 0;
     this.status.set('idle');
     this.room.set(null);
@@ -408,8 +439,7 @@ export class ChatService {
     this.messages.set([]);
     this.myNick.set(null);
     this.myFingerprint.set(null);
-    this.peerNick.set(null);
-    this.peerFingerprint.set(null);
+    this.participants.set([]);
   }
 
   private push(message: Omit<ChatMessage, 'id' | 'at'>): void {

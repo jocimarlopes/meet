@@ -5,14 +5,22 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <p class="intro">
+  <ion-card class="invited" *ngIf="invited">
+    <ion-card-content>
+      <ion-icon name="mail-open-outline" color="primary"></ion-icon>
+      <h2>Você foi convidado para uma conversa</h2>
+      <p>Escolha um apelido e entre. Ele precisa ser diferente dos que já estão na sala.</p>
+    </ion-card-content>
+  </ion-card>
+
+  <p class="intro" *ngIf="!invited">
     Conversa direta entre navegadores, cifrada com PGP. O servidor só apresenta
-    os dois lados — depois disso ele sai do caminho.
+    quem está na sala — depois disso ele sai do caminho.
   </p>
 
   <ion-card>
     <ion-card-header>
-      <ion-card-subtitle>1. seu apelido</ion-card-subtitle>
+      <ion-card-subtitle>{{ invited ? 'seu apelido' : '1. seu apelido' }}</ion-card-subtitle>
     </ion-card-header>
     <ion-card-content>
       <ion-input
@@ -23,14 +31,26 @@
         autocomplete="off"
         placeholder="como você aparece na sala"
         [(ngModel)]="nick"
+        (keyup.enter)="invited && joinRoom()"
       ></ion-input>
       <ion-note class="hint" [color]="nick && !nickIsValid ? 'danger' : 'medium'">
         2 a 24 caracteres. Precisa ser diferente do apelido de quem já está na sala.
       </ion-note>
+
+      <ion-button
+        *ngIf="invited"
+        expand="block"
+        class="ion-margin-top"
+        [disabled]="!canJoin"
+        (click)="joinRoom()"
+      >
+        <ion-icon name="enter-outline" slot="start"></ion-icon>
+        Entrar na conversa
+      </ion-button>
     </ion-card-content>
   </ion-card>
 
-  <ion-card>
+  <ion-card *ngIf="!invited">
     <ion-card-header>
       <ion-card-subtitle>2a. criar um convite</ion-card-subtitle>
     </ion-card-header>
@@ -46,7 +66,7 @@
     </ion-card-content>
   </ion-card>
 
-  <ion-card>
+  <ion-card *ngIf="!invited">
     <ion-card-header>
       <ion-card-subtitle>2b. entrar com um convite</ion-card-subtitle>
     </ion-card-header>

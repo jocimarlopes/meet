@@ -1,8 +1,8 @@
-import { Component, ElementRef, ViewChild, effect, inject } from '@angular/core';
+import { Component, ViewChild, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, IonContent, ToastController } from '@ionic/angular';
 
-import { ChatService } from '../core/services/chat.service';
+import { ChatService, Participant } from '../core/services/chat.service';
 import { SoundService } from '../core/services/sound.service';
 
 @Component({
@@ -20,42 +20,13 @@ export class ChatPage {
 
   @ViewChild(IonContent) private content?: IonContent;
 
-  // Os elementos de vídeo vivem dentro de *ngIf, então aparecem e somem. O
-  // setter religa o stream sempre que o elemento é recriado; o effect cobre o
-  // caminho inverso, quando o stream muda com o elemento já na tela.
-  @ViewChild('localVideo') set localVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
-    this.localVideo = ref?.nativeElement;
-    this.bind(this.localVideo, this.chat.localCamera());
-  }
-
-  @ViewChild('remoteVideo') set remoteVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
-    this.remoteVideo = ref?.nativeElement;
-    this.bind(this.remoteVideo, this.chat.remoteCamera());
-  }
-
-  /**
-   * O áudio remoto tem elemento próprio: o `<video>` é `muted` para garantir
-   * autoplay, então o som dele sairia silenciado.
-   */
-  @ViewChild('remoteAudio') set remoteAudioRef(ref: ElementRef<HTMLAudioElement> | undefined) {
-    this.remoteAudio = ref?.nativeElement;
-    this.bind(this.remoteAudio, this.chat.remoteMic());
-  }
-
-  private localVideo?: HTMLVideoElement;
-  private remoteVideo?: HTMLVideoElement;
-  private remoteAudio?: HTMLAudioElement;
-
   draft = '';
   showFingerprints = false;
   cameraBusy = false;
   micBusy = false;
+  private warnedAboutAudio = false;
 
   constructor() {
-    effect(() => this.bind(this.localVideo, this.chat.localCamera()));
-    effect(() => this.bind(this.remoteVideo, this.chat.remoteCamera()));
-    effect(() => this.bind(this.remoteAudio, this.chat.remoteMic()));
-
     // Sessão encerrada (saída, erro do servidor, F5): volta para o lobby.
     effect(() => {
       if (this.chat.status() === 'idle') {
@@ -70,6 +41,7 @@ export class ChatPage {
   }
 
   get statusLabel(): string {
+    const connected = this.chat.connectedCount();
     switch (this.chat.status()) {
       case 'preparing':
         return 'gerando suas chaves…';
@@ -78,12 +50,31 @@ export class ChatPage {
       case 'connecting':
         return 'negociando conexão direta…';
       case 'connected':
-        return 'conectado ponta a ponta';
+        // Com cinco botões na barra, sobra pouca largura para o subtítulo.
+        return connected === 1 ? 'conectado ponta a ponta' : `${connected} conectados`;
       case 'ended':
         return 'conversa encerrada';
       default:
         return '';
     }
+  }
+
+  /** Link pronto para colar: quem abrir cai direto na tela de apelido. */
+  get inviteLink(): string {
+    const id = this.chat.room()?.id;
+    if (!id) {
+      return '';
+    }
+    const { origin, pathname } = window.location;
+    return `${origin}${pathname}#/entrar/${id}`;
+  }
+
+  get micLabel(): string {
+    const nicks = this.chat.remoteMicList().map((entry) => entry.nick);
+    if (nicks.length === 1) {
+      return `${nicks[0]} está com o microfone aberto`;
+    }
+    return `${nicks.length} pessoas com o microfone aberto`;
   }
 
   async send(): Promise<void> {
@@ -128,6 +119,44 @@ export class ChatPage {
     }
   }
 
+  async copyInviteLink(): Promise<void> {
+    const link = this.inviteLink;
+    if (!link) {
+      return;
+    }
+    await navigator.clipboard.writeText(link);
+    await this.toast('Link do convite copiado.', 'success');
+  }
+
+  async onAudioBlocked(): Promise<void> {
+    if (this.warnedAboutAudio) {
+      return;
+    }
+    this.warnedAboutAudio = true;
+    await this.toast('Toque na tela para liberar o áudio da conversa.', 'warning');
+  }
+
+  async confirmLeave(): Promise<void> {
+    const alert = await this.alerts.create({
+      header: 'Sair da conversa?',
+      message:
+        'As conexões são encerradas e o histórico some — ele só existe nesta aba.',
+      buttons: [
+        { text: 'Ficar', role: 'cancel' },
+        { text: 'Sair', role: 'destructive', handler: () => this.chat.leave() },
+      ],
+    });
+    await alert.present();
+  }
+
+  trackByNick(_index: number, entry: { nick: string }): string {
+    return entry.nick;
+  }
+
+  trackByPeer(_index: number, peer: Participant): string {
+    return peer.nick;
+  }
+
   /** Traduz o erro do getUserMedia para algo acionável. */
   private mediaFailure(cause: unknown, device: string): string {
     const name = cause instanceof DOMException ? cause.name : '';
@@ -141,47 +170,6 @@ export class ChatPage {
       return `O ${device} está em uso por outro programa.`;
     }
     return `Não foi possível abrir o ${device}.`;
-  }
-
-  private bind(
-    element: HTMLMediaElement | undefined,
-    stream: MediaStream | null,
-  ): void {
-    if (!element || element.srcObject === stream) {
-      return;
-    }
-    element.srcObject = stream;
-    if (!stream) {
-      return;
-    }
-    void element.play().catch(() => {
-      // Só o áudio esbarra na política de autoplay; o vídeo é muted.
-      if (element instanceof HTMLAudioElement) {
-        void this.toast('Toque na tela para liberar o áudio da conversa.', 'warning');
-      }
-    });
-  }
-
-  async copyRoomId(): Promise<void> {
-    const id = this.chat.room()?.id;
-    if (!id) {
-      return;
-    }
-    await navigator.clipboard.writeText(id);
-    await this.toast('Id da sala copiado.', 'success');
-  }
-
-  async confirmLeave(): Promise<void> {
-    const alert = await this.alerts.create({
-      header: 'Sair da conversa?',
-      message:
-        'A conexão é encerrada e o histórico some — ele só existe nesta aba.',
-      buttons: [
-        { text: 'Ficar', role: 'cancel' },
-        { text: 'Sair', role: 'destructive', handler: () => this.chat.leave() },
-      ],
-    });
-    await alert.present();
   }
 
   private scrollToBottom(): void {
