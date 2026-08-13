@@ -1,14 +1,10 @@
-import { Component, OnDestroy, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
-import { Subscription, interval, startWith, switchMap } from 'rxjs';
 
-import { RoomView, isValidNick } from '../core/models/signaling.models';
+import { isValidNick } from '../core/models/signaling.models';
 import { ChatService } from '../core/services/chat.service';
-import { RoomsService } from '../core/services/rooms.service';
 import { SoundService } from '../core/services/sound.service';
-
-const REFRESH_INTERVAL_MS = 5_000;
 
 @Component({
   selector: 'app-home',
@@ -16,81 +12,48 @@ const REFRESH_INTERVAL_MS = 5_000;
   styleUrls: ['home.page.scss'],
   standalone: false,
 })
-export class HomePage implements OnDestroy {
+export class HomePage {
   private readonly chat = inject(ChatService);
-  private readonly rooms = inject(RoomsService);
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastController);
   private readonly sound = inject(SoundService);
 
   nick = '';
-  roomName = '';
-  openRooms: RoomView[] = [];
+  inviteCode = '';
   busy = false;
-  offline = false;
-
-  private polling?: Subscription;
 
   get nickIsValid(): boolean {
     return isValidNick(this.nick);
   }
 
   get canCreate(): boolean {
-    return this.nickIsValid && this.roomName.trim().length > 0 && !this.busy;
+    return this.nickIsValid && !this.busy;
+  }
+
+  get canJoin(): boolean {
+    return this.nickIsValid && this.inviteCode.trim().length > 0 && !this.busy;
   }
 
   ionViewWillEnter(): void {
-    // Uma sessão anterior pode ter ficado pendurada ao voltar para o lobby.
+    // Uma sessão anterior pode ter ficado pendurada ao voltar para cá.
     this.chat.leave();
-    this.showPendingError();
-    this.startPolling();
-  }
-
-  ionViewWillLeave(): void {
-    this.stopPolling();
-  }
-
-  ngOnDestroy(): void {
-    this.stopPolling();
+    void this.showPendingError();
   }
 
   async createRoom(): Promise<void> {
     if (!this.canCreate) {
       return;
     }
+    await this.enterSession(() => this.chat.createRoom(this.nick.trim()));
+  }
+
+  async joinRoom(): Promise<void> {
+    if (!this.canJoin) {
+      return;
+    }
     await this.enterSession(() =>
-      this.chat.createRoom(this.roomName.trim(), this.nick.trim()),
+      this.chat.joinRoom(this.inviteCode.trim(), this.nick.trim()),
     );
-  }
-
-  async joinRoom(room: RoomView): Promise<void> {
-    if (!this.nickIsValid) {
-      await this.toast('Escolha um apelido antes de entrar.', 'warning');
-      return;
-    }
-    if (room.host_nick && room.host_nick.toLowerCase() === this.nick.trim().toLowerCase()) {
-      await this.toast('Este apelido já é usado nesta sala.', 'warning');
-      return;
-    }
-    await this.enterSession(() => this.chat.joinRoom(room.id, this.nick.trim()));
-  }
-
-  refresh(event?: CustomEvent): void {
-    this.rooms.listOpenRooms().subscribe({
-      next: (rooms) => {
-        this.openRooms = rooms;
-        this.offline = false;
-        this.completeRefresh(event);
-      },
-      error: () => {
-        this.offline = true;
-        this.completeRefresh(event);
-      },
-    });
-  }
-
-  trackRoom(_index: number, room: RoomView): string {
-    return room.id;
   }
 
   private async enterSession(action: () => Promise<void>): Promise<void> {
@@ -118,35 +81,6 @@ export class HomePage implements OnDestroy {
       this.chat.error.set(null);
       await this.toast(error, 'danger');
     }
-  }
-
-  private startPolling(): void {
-    this.stopPolling();
-    this.polling = interval(REFRESH_INTERVAL_MS)
-      .pipe(
-        startWith(0),
-        switchMap(() => this.rooms.listOpenRooms()),
-      )
-      .subscribe({
-        next: (rooms) => {
-          this.openRooms = rooms;
-          this.offline = false;
-        },
-        error: () => {
-          this.offline = true;
-          // O `interval` morre no erro; volta a tentar no próximo ciclo.
-          setTimeout(() => this.startPolling(), REFRESH_INTERVAL_MS);
-        },
-      });
-  }
-
-  private stopPolling(): void {
-    this.polling?.unsubscribe();
-    this.polling = undefined;
-  }
-
-  private completeRefresh(event?: CustomEvent): void {
-    (event?.target as HTMLIonRefresherElement | undefined)?.complete();
   }
 
   private async toast(message: string, color: string): Promise<void> {

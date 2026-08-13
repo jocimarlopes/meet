@@ -34,6 +34,81 @@ ion-title .status {
   }
 }
 
+/* Faixa reservada acima da conversa; só ocupa espaço com câmera ligada. */
+.video-panel {
+  position: relative;
+  height: 34vh;
+  max-height: 260px;
+  background: #000;
+  overflow: hidden;
+
+  .remote {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+
+  .idle-camera {
+    position: absolute;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.55);
+    text-align: center;
+    padding: 0 16px;
+  }
+
+  .local {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: 28%;
+    max-width: 130px;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: #111;
+    /* Espelhado, como todo mundo espera da própria imagem. */
+    transform: scaleX(-1);
+  }
+}
+
+.invite {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 20px;
+  padding: 14px 18px;
+  border: 1px dashed var(--ion-color-primary);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ion-color-primary);
+  cursor: pointer;
+
+  code {
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+  }
+
+  ion-icon {
+    font-size: 1.15rem;
+  }
+}
+
+.caveat {
+  font-size: 0.8rem !important;
+  max-width: 30rem;
+  margin-inline: auto;
+}
+
 .waiting {
   text-align: center;
   padding: 40px 16px;

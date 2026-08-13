@@ -1,4 +1,4 @@
-import { Component, ViewChild, effect, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, IonContent, ToastController } from '@ionic/angular';
 
@@ -20,10 +20,30 @@ export class ChatPage {
 
   @ViewChild(IonContent) private content?: IonContent;
 
+  // Os elementos de vídeo vivem dentro de *ngIf, então aparecem e somem. O
+  // setter religa o stream sempre que o elemento é recriado; o effect cobre o
+  // caminho inverso, quando o stream muda com o elemento já na tela.
+  @ViewChild('localVideo') set localVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
+    this.localVideo = ref?.nativeElement;
+    this.bind(this.localVideo, this.chat.localStream());
+  }
+
+  @ViewChild('remoteVideo') set remoteVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
+    this.remoteVideo = ref?.nativeElement;
+    this.bind(this.remoteVideo, this.chat.remoteStream());
+  }
+
+  private localVideo?: HTMLVideoElement;
+  private remoteVideo?: HTMLVideoElement;
+
   draft = '';
   showFingerprints = false;
+  cameraBusy = false;
 
   constructor() {
+    effect(() => this.bind(this.localVideo, this.chat.localStream()));
+    effect(() => this.bind(this.remoteVideo, this.chat.remoteStream()));
+
     // Sessão encerrada (saída, erro do servidor, F5): volta para o lobby.
     effect(() => {
       if (this.chat.status() === 'idle') {
@@ -65,6 +85,45 @@ export class ChatPage {
     } catch {
       this.draft = text;
       await this.toast('Não foi possível enviar. O canal caiu?', 'danger');
+    }
+  }
+
+  async toggleCamera(): Promise<void> {
+    if (this.cameraBusy || !this.chat.canSend()) {
+      return;
+    }
+    this.cameraBusy = true;
+    try {
+      await this.chat.toggleCamera();
+    } catch (cause) {
+      await this.toast(this.cameraFailure(cause), 'danger');
+    } finally {
+      this.cameraBusy = false;
+    }
+  }
+
+  /** Traduz o erro do getUserMedia para algo acionável. */
+  private cameraFailure(cause: unknown): string {
+    const name = cause instanceof DOMException ? cause.name : '';
+    if (name === 'NotAllowedError') {
+      return 'Permissão de câmera negada. Libere nas configurações do site.';
+    }
+    if (name === 'NotFoundError') {
+      return 'Nenhuma câmera encontrada neste dispositivo.';
+    }
+    if (name === 'NotReadableError') {
+      return 'A câmera está em uso por outro programa.';
+    }
+    return 'Não foi possível abrir a câmera.';
+  }
+
+  private bind(element: HTMLVideoElement | undefined, stream: MediaStream | null): void {
+    if (!element || element.srcObject === stream) {
+      return;
+    }
+    element.srcObject = stream;
+    if (stream) {
+      void element.play().catch(() => undefined);
     }
   }
 

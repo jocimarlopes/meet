@@ -64,6 +64,14 @@ export class ChatService {
   readonly isActive = computed(() => this.status() !== 'idle');
   readonly canSend = computed(() => this.status() === 'connected');
 
+  /** Câmeras: a sua e a do outro lado, cada uma ligada de forma independente. */
+  readonly localStream = this.peerConnection.localStream;
+  readonly remoteStream = this.peerConnection.remoteStream;
+  readonly cameraOn = computed(() => this.localStream() !== null);
+  readonly anyVideo = computed(
+    () => this.localStream() !== null || this.remoteStream() !== null,
+  );
+
   private identity: Identity | null = null;
   private peer: PeerIdentity | null = null;
   private closingOnPurpose = false;
@@ -106,13 +114,13 @@ export class ChatService {
 
   // -- ações do usuário ----------------------------------------------------
 
-  async createRoom(name: string, nick: string): Promise<void> {
+  async createRoom(nick: string): Promise<void> {
     await this.prepare(nick);
     this.role.set('host');
     await this.signaling.connect();
     this.signaling.send({
       type: 'create_room',
-      name,
+      name: `Sala de ${nick}`,
       nick,
       public_key: this.identity!.publicKeyArmored,
     });
@@ -144,6 +152,21 @@ export class ChatService {
       text: trimmed,
       verified: true,
     });
+  }
+
+  /**
+   * Liga ou desliga a própria câmera. Abrir a câmera no meio da conversa é uma
+   * renegociação WebRTC, que trafega pelo canal direto — o servidor não volta
+   * a participar.
+   */
+  async toggleCamera(): Promise<void> {
+    if (this.cameraOn()) {
+      this.peerConnection.stopCamera();
+      this.pushSystem('Você desligou a câmera.');
+      return;
+    }
+    await this.peerConnection.startCamera();
+    this.pushSystem('Você ligou a câmera.');
   }
 
   leave(): void {
@@ -196,6 +219,14 @@ export class ChatService {
         break;
 
       case 'peer_left':
+        // Assim que o P2P sobe, os dois lados fecham o signaling — mas não no
+        // mesmo instante. Quem fecha primeiro gera um `peer_left` para o outro,
+        // que ainda está ouvindo. Ignorar aqui evita derrubar uma conexão
+        // direta que está funcionando; a saída real chega pela queda do
+        // próprio DataChannel.
+        if (this.status() === 'connected') {
+          break;
+        }
         this.peerConnection.close();
         this.peer = null;
         this.peerNick.set(null);

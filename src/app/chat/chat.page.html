@@ -6,6 +6,17 @@
     </ion-title>
     <ion-buttons slot="end">
       <ion-button
+        [disabled]="!chat.canSend() || cameraBusy"
+        (click)="toggleCamera()"
+        [title]="chat.cameraOn() ? 'Desligar câmera' : 'Ligar câmera'"
+      >
+        <ion-icon
+          slot="icon-only"
+          [color]="chat.cameraOn() ? 'primary' : undefined"
+          [name]="chat.cameraOn() ? 'videocam' : 'videocam-outline'"
+        ></ion-icon>
+      </ion-button>
+      <ion-button
         (click)="sound.toggleMute()"
         [title]="sound.muted() ? 'Ativar avisos sonoros' : 'Silenciar avisos sonoros'"
       >
@@ -23,6 +34,17 @@
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
+
+<div class="video-panel" *ngIf="chat.anyVideo()">
+  <div class="remote">
+    <video #remoteVideo autoplay playsinline muted></video>
+    <span class="idle-camera" *ngIf="!chat.remoteStream()">
+      {{ chat.peerNick() }} está com a câmera desligada
+    </span>
+  </div>
+
+  <video class="local" #localVideo autoplay playsinline muted *ngIf="chat.localStream()"></video>
+</div>
 
 <ion-content class="ion-padding">
   <ion-card class="fingerprints" *ngIf="showFingerprints">
@@ -48,15 +70,18 @@
 
   <div class="waiting" *ngIf="chat.status() === 'waiting'">
     <ion-spinner name="dots"></ion-spinner>
-    <h2>Sala aberta</h2>
-    <p>
-      Ela já aparece na lista para quem estiver no site. Se preferir, passe o id
-      direto:
-    </p>
-    <ion-chip outline color="primary" (click)="copyRoomId()">
-      <ion-label>{{ chat.room()?.id }}</ion-label>
+    <h2>Convite pronto</h2>
+    <p>Mande este código para quem você quer na conversa:</p>
+
+    <button class="invite" type="button" (click)="copyRoomId()">
+      <code>{{ chat.room()?.id }}</code>
       <ion-icon name="copy-outline"></ion-icon>
-    </ion-chip>
+    </button>
+
+    <p class="caveat">
+      Só quem tiver o código entra. Mantenha esta aba aberta — a sala existe
+      enquanto ela estiver de pé.
+    </p>
   </div>
 
   <div class="waiting" *ngIf="chat.status() === 'preparing' || chat.status() === 'connecting'">

@@ -24,15 +24,11 @@ ion-card-subtitle {
   font-size: 0.78rem;
 }
 
-.rooms ion-list {
-  margin: 0 -8px;
-  background: transparent;
-}
-
-.rooms ion-item {
-  --background: var(--ion-color-light);
-  --border-radius: 10px;
-  margin-bottom: 8px;
+.explain {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ion-color-medium);
 }
 
 .footnote {
