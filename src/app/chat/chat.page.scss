@@ -49,10 +49,19 @@ ion-title .status {
 /* Faixa reservada acima da conversa; só ocupa espaço com câmera ligada. */
 .video-panel {
   position: relative;
-  height: 34vh;
-  max-height: 260px;
+  height: 40vh;
+  max-height: 340px;
+  padding: 4px;
   background: #000;
   overflow: hidden;
+
+  .stage {
+    position: relative;
+    height: 100%;
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+  }
 
   /* Uma coluna com um convidado, duas a partir de dois. */
   .grid {
@@ -60,28 +69,39 @@ ion-title .status {
     height: 100%;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 2px;
-    align-items: center;
-    justify-items: center;
+    gap: 4px;
+    place-items: center;
 
-    &[data-count='2'],
+    &[data-count='2'] {
+      grid-template-columns: 1fr 1fr;
+    }
+
     &[data-count='3'],
     &[data-count='4'] {
       grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
     }
   }
 
+  /*
+   * A proporção fica no quadro, não no vídeo. Sem isso o quadro herda a
+   * largura inteira da janela contra uma altura fixa — numa tela larga vira
+   * uma faixa de 7:1, e qualquer recorte amplia a imagem até o absurdo.
+   */
   .tile {
     position: relative;
-    width: 100%;
     height: 100%;
+    max-width: 100%;
+    aspect-ratio: 4 / 3;
     min-height: 0;
 
     video {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      /* Encaixa a imagem inteira: melhor uma borda que um rosto cortado. */
+      object-fit: contain;
       background: #111;
+      border-radius: 6px;
     }
 
     .who {
@@ -172,6 +192,9 @@ ion-title .status {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Sem teto, num monitor largo o balão atravessaria a tela inteira. */
+  max-width: 760px;
+  margin-inline: auto;
 }
 
 .message {

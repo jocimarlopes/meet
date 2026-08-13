@@ -56,21 +56,25 @@
 ></audio>
 
 <div class="video-panel" *ngIf="chat.anyVideo()">
-  <div class="grid" [attr.data-count]="chat.remoteCameraList().length">
-    <div class="tile" *ngFor="let entry of chat.remoteCameraList(); trackBy: trackByNick">
-      <video autoplay playsinline muted [srcObjectRef]="entry.stream"></video>
-      <span class="who">{{ entry.nick }}</span>
+  <!-- O palco acompanha a largura dos vídeos, para a miniatura local ficar
+       ancorada neles e não na borda da janela. -->
+  <div class="stage">
+    <div class="grid" [attr.data-count]="chat.remoteCameraList().length">
+      <div class="tile" *ngFor="let entry of chat.remoteCameraList(); trackBy: trackByNick">
+        <video autoplay playsinline muted [srcObjectRef]="entry.stream"></video>
+        <span class="who">{{ entry.nick }}</span>
+      </div>
+
+      <p class="idle-camera" *ngIf="chat.remoteCameraList().length === 0">
+        Ninguém mais está com a câmera ligada
+      </p>
     </div>
 
-    <p class="idle-camera" *ngIf="chat.remoteCameraList().length === 0">
-      Ninguém mais está com a câmera ligada
-    </p>
+    <video class="local" autoplay playsinline muted
+      *ngIf="chat.localCamera() as stream"
+      [srcObjectRef]="stream"
+    ></video>
   </div>
-
-  <video class="local" autoplay playsinline muted
-    *ngIf="chat.localCamera() as stream"
-    [srcObjectRef]="stream"
-  ></video>
 </div>
 
 <div class="live-audio" *ngIf="chat.remoteMicList().length > 0 && !chat.anyVideo()">
