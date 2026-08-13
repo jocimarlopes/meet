@@ -1,0 +1,51 @@
+name: Deploy no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Uma publicação por vez; deixa a fila terminar em vez de cancelar no meio.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Domínio próprio ou user.github.io: '/'.
+  # Publicando em user.github.io/nome-do-repo: troque para '/nome-do-repo/'.
+  BASE_HREF: /
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx ng build --configuration production --base-href "$BASE_HREF"
+
+      # O app usa rotas com hash, então não precisa de 404.html.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: www
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

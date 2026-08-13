@@ -1,0 +1,106 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>
+      {{ chat.room()?.name }}
+      <span class="status">{{ statusLabel }}</span>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="showFingerprints = !showFingerprints" title="Impressões digitais">
+        <ion-icon slot="icon-only" name="finger-print-outline"></ion-icon>
+      </ion-button>
+      <ion-button color="danger" (click)="confirmLeave()" title="Sair">
+        <ion-icon slot="icon-only" name="exit-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card class="fingerprints" *ngIf="showFingerprints">
+    <ion-card-header>
+      <ion-card-subtitle>impressões digitais</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <p class="warning">
+        Quem entrega a chave do outro lado é o servidor. Confirme estes códigos
+        por outro meio (ligação, presencialmente) para ter certeza de que
+        ninguém está no meio.
+      </p>
+      <div class="fingerprint">
+        <span class="who">{{ chat.myNick() }} (você)</span>
+        <code>{{ chat.formatFingerprint(chat.myFingerprint()) }}</code>
+      </div>
+      <div class="fingerprint" *ngIf="chat.peerFingerprint()">
+        <span class="who">{{ chat.peerNick() }}</span>
+        <code>{{ chat.formatFingerprint(chat.peerFingerprint()) }}</code>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <div class="waiting" *ngIf="chat.status() === 'waiting'">
+    <ion-spinner name="dots"></ion-spinner>
+    <h2>Sala aberta</h2>
+    <p>
+      Ela já aparece na lista para quem estiver no site. Se preferir, passe o id
+      direto:
+    </p>
+    <ion-chip outline color="primary" (click)="copyRoomId()">
+      <ion-label>{{ chat.room()?.id }}</ion-label>
+      <ion-icon name="copy-outline"></ion-icon>
+    </ion-chip>
+  </div>
+
+  <div class="waiting" *ngIf="chat.status() === 'preparing' || chat.status() === 'connecting'">
+    <ion-spinner name="dots"></ion-spinner>
+    <p>{{ statusLabel }}</p>
+  </div>
+
+  <div class="messages">
+    <div class="message" *ngFor="let message of chat.messages()" [class]="message.kind">
+      <ng-container *ngIf="message.kind === 'system'; else bubble">
+        <ion-note class="system">{{ message.text }}</ion-note>
+      </ng-container>
+
+      <ng-template #bubble>
+        <div class="body">
+          <span class="author" *ngIf="message.kind === 'theirs'">{{ message.nick }}</span>
+          <span class="text">{{ message.text }}</span>
+          <span class="meta">
+            {{ message.at | date: 'HH:mm' }}
+            <ion-icon
+              *ngIf="message.kind === 'theirs'"
+              [name]="message.verified ? 'shield-checkmark-outline' : 'warning-outline'"
+              [color]="message.verified ? 'success' : 'warning'"
+              [title]="message.verified ? 'Assinatura PGP conferida' : 'Assinatura não conferida'"
+            ></ion-icon>
+          </span>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer class="ion-no-border" *ngIf="chat.status() !== 'idle'">
+  <ion-toolbar>
+    <ion-input
+      class="composer"
+      fill="outline"
+      maxlength="4000"
+      autocomplete="off"
+      [disabled]="!chat.canSend()"
+      [placeholder]="chat.canSend() ? 'mensagem cifrada…' : 'aguardando conexão…'"
+      [(ngModel)]="draft"
+      (keyup.enter)="send()"
+    ></ion-input>
+    <ion-buttons slot="end">
+      <ion-button
+        fill="solid"
+        color="primary"
+        [disabled]="!chat.canSend() || !draft.trim()"
+        (click)="send()"
+      >
+        <ion-icon slot="icon-only" name="send-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>

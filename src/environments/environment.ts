@@ -1,16 +1,15 @@
-// This file can be replaced during build by using the `fileReplacements` array.
-// `ng build` replaces `environment.ts` with `environment.prod.ts`.
-// The list of file replacements can be found in `angular.json`.
+// Desenvolvimento: backend rodando local (uvicorn na 8000).
+// `ng build` troca este arquivo por environment.prod.ts (ver angular.json).
 
 export const environment = {
-  production: false
-};
+  production: false,
+  apiUrl: 'http://localhost:8000/api',
+  signalingUrl: 'ws://localhost:8000/api/ws',
 
-/*
- * For easier debugging in development mode, you can import the following file
- * to ignore zone related error stack frames such as `zone.run`, `zoneDelegate.invokeTask`.
- *
- * This import should be commented out in production mode because it will have a negative impact
- * on performance if an error is thrown.
- */
-// import 'zone.js/plugins/zone-error';  // Included with Angular CLI.
+  // STUN resolve a maioria dos casos. Atrás de NAT simétrico (algumas redes
+  // corporativas e móveis) a conexão direta falha e só um TURN resolve —
+  // adicione o seu aqui com `username` e `credential`.
+  iceServers: [
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+  ] as RTCIceServer[],
+};

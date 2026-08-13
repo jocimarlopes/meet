@@ -1,0 +1,128 @@
+ion-title .status {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--ion-color-medium);
+  text-transform: lowercase;
+}
+
+.fingerprints {
+  margin-inline: 0;
+
+  .warning {
+    margin: 0 0 16px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--ion-color-medium);
+  }
+
+  .fingerprint {
+    margin-bottom: 12px;
+
+    .who {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--ion-color-medium);
+      margin-bottom: 2px;
+    }
+
+    code {
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
+      word-break: break-all;
+    }
+  }
+}
+
+.waiting {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--ion-color-medium);
+
+  h2 {
+    font-size: 1.1rem;
+    color: var(--ion-text-color);
+    margin: 12px 0 4px;
+  }
+
+  p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin: 0 0 12px;
+  }
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  display: flex;
+
+  &.mine {
+    justify-content: flex-end;
+  }
+
+  &.theirs {
+    justify-content: flex-start;
+  }
+
+  &.system {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .system {
+    font-size: 0.76rem;
+    line-height: 1.4;
+    max-width: 85%;
+  }
+
+  .body {
+    max-width: 78%;
+    padding: 8px 12px;
+    border-radius: 14px;
+    background: var(--ion-color-light);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &.mine .body {
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+    border-bottom-right-radius: 4px;
+  }
+
+  &.theirs .body {
+    border-bottom-left-radius: 4px;
+  }
+
+  .author {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+  }
+
+  .text {
+    font-size: 0.95rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    font-size: 0.68rem;
+    opacity: 0.7;
+  }
+}
+
+.composer {
+  margin-inline-start: 8px;
+}

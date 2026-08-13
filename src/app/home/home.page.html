@@ -1,20 +1,94 @@
-<ion-header [translucent]="true">
+<ion-header class="ion-no-border">
   <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+    <ion-title>chat p2p</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($any($event))">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+  <p class="intro">
+    Conversa direta entre navegadores, cifrada com PGP. O servidor só apresenta
+    os dois lados — depois disso ele sai do caminho.
+  </p>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-subtitle>1. seu apelido</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-input
+        label="Apelido"
+        labelPlacement="stacked"
+        fill="outline"
+        maxlength="24"
+        autocomplete="off"
+        placeholder="como você aparece na sala"
+        [(ngModel)]="nick"
+      ></ion-input>
+      <ion-note class="hint" [color]="nick && !nickIsValid ? 'danger' : 'medium'">
+        2 a 24 caracteres. Precisa ser único dentro da sala.
+      </ion-note>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-subtitle>2a. criar uma sala</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-input
+        label="Nome da sala"
+        labelPlacement="stacked"
+        fill="outline"
+        maxlength="48"
+        autocomplete="off"
+        placeholder="ex.: conversa rápida"
+        [(ngModel)]="roomName"
+        (keyup.enter)="createRoom()"
+      ></ion-input>
+      <ion-button expand="block" class="ion-margin-top" [disabled]="!canCreate" (click)="createRoom()">
+        <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+        Criar e aguardar alguém
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-subtitle>2b. entrar em uma sala aberta</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content class="rooms">
+      <ion-note color="danger" *ngIf="offline">
+        Servidor de signaling fora do ar. Confira se o backend está rodando.
+      </ion-note>
+
+      <ion-note color="medium" *ngIf="!offline && openRooms.length === 0">
+        Nenhuma sala aberta agora. Crie a sua acima.
+      </ion-note>
+
+      <ion-list lines="none" *ngIf="openRooms.length > 0">
+        <ion-item
+          button
+          detail
+          *ngFor="let room of openRooms; trackBy: trackRoom"
+          [disabled]="busy"
+          (click)="joinRoom(room)"
+        >
+          <ion-icon name="lock-closed-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>
+            <h3>{{ room.name }}</h3>
+            <p>criada por {{ room.host_nick }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-note class="footnote" color="medium">
+    As chaves são geradas nesta aba e nunca saem dela — só a parte pública é
+    trocada. Fechou a aba, sumiu tudo.
+  </ion-note>
 </ion-content>
