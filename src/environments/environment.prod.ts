@@ -1,7 +1,8 @@
 // Produção: front no GitHub Pages, signaling na Vercel.
-// Troque o host abaixo pelo domínio do seu projeto na Vercel.
+// Se o projeto da Vercel trocar de domínio, é aqui que se ajusta — e o
+// ALLOWED_ORIGINS de lá precisa conter a origem do Pages.
 
-const SIGNALING_HOST = 'chat-p2p-signaling.vercel.app';
+const SIGNALING_HOST = 'chat-p2p-backend-five.vercel.app';
 
 export const environment = {
   production: true,

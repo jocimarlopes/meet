@@ -16,9 +16,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Domínio próprio ou user.github.io: '/'.
-  # Publicando em user.github.io/nome-do-repo: troque para '/nome-do-repo/'.
-  BASE_HREF: /
+  # Publicado em jocimarlopes.github.io/chat_p2p_frontend/, então os assets
+  # precisam ser buscados nesse prefixo — com '/' a página abre em branco.
+  # Se um dia migrar para domínio próprio, volte para '/'.
+  BASE_HREF: /chat_p2p_frontend/
 
 jobs:
   build:
