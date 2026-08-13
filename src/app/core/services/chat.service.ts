@@ -11,6 +11,7 @@ import {
   PeerConnectionState,
 } from './peer-connection.service';
 import { SignalingService } from './signaling.service';
+import { SoundService } from './sound.service';
 
 export type SessionStatus =
   | 'idle'
@@ -47,6 +48,7 @@ export class ChatService {
   private readonly pgp = inject(PgpService);
   private readonly signaling = inject(SignalingService);
   private readonly peerConnection = inject(PeerConnectionService);
+  private readonly sound = inject(SoundService);
 
   readonly status = signal<SessionStatus>('idle');
   readonly room = signal<RoomView | null>(null);
@@ -184,6 +186,7 @@ export class ChatService {
 
       case 'peer_joined':
         await this.adoptPeer(message.peer.nick, message.peer.public_key);
+        this.sound.peerJoined();
         this.status.set('connecting');
         await this.peerConnection.start('host');
         break;
@@ -311,6 +314,7 @@ export class ChatService {
         armored,
       );
       this.push({ kind: 'theirs', nick: this.peer.nick, text, verified });
+      this.sound.messageReceived();
     } catch {
       this.pushSystem('Chegou uma mensagem que não foi possível decifrar.');
     }

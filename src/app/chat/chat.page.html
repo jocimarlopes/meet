@@ -5,6 +5,15 @@
       <span class="status">{{ statusLabel }}</span>
     </ion-title>
     <ion-buttons slot="end">
+      <ion-button
+        (click)="sound.toggleMute()"
+        [title]="sound.muted() ? 'Ativar avisos sonoros' : 'Silenciar avisos sonoros'"
+      >
+        <ion-icon
+          slot="icon-only"
+          [name]="sound.muted() ? 'volume-mute-outline' : 'volume-high-outline'"
+        ></ion-icon>
+      </ion-button>
       <ion-button (click)="showFingerprints = !showFingerprints" title="Impressões digitais">
         <ion-icon slot="icon-only" name="finger-print-outline"></ion-icon>
       </ion-button>

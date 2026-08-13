@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AlertController, IonContent, ToastController } from '@ionic/angular';
 
 import { ChatService } from '../core/services/chat.service';
+import { SoundService } from '../core/services/sound.service';
 
 @Component({
   selector: 'app-chat',
@@ -15,6 +16,7 @@ export class ChatPage {
   private readonly alerts = inject(AlertController);
   private readonly toasts = inject(ToastController);
   readonly chat = inject(ChatService);
+  readonly sound = inject(SoundService);
 
   @ViewChild(IonContent) private content?: IonContent;
 

@@ -6,6 +6,7 @@ import { Subscription, interval, startWith, switchMap } from 'rxjs';
 import { RoomView, isValidNick } from '../core/models/signaling.models';
 import { ChatService } from '../core/services/chat.service';
 import { RoomsService } from '../core/services/rooms.service';
+import { SoundService } from '../core/services/sound.service';
 
 const REFRESH_INTERVAL_MS = 5_000;
 
@@ -20,6 +21,7 @@ export class HomePage implements OnDestroy {
   private readonly rooms = inject(RoomsService);
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastController);
+  private readonly sound = inject(SoundService);
 
   nick = '';
   roomName = '';
@@ -92,6 +94,9 @@ export class HomePage implements OnDestroy {
   }
 
   private async enterSession(action: () => Promise<void>): Promise<void> {
+    // Estamos dentro do clique: é a única janela em que o navegador libera
+    // áudio. Os avisos sonoros tocam bem depois disso.
+    this.sound.unlock();
     this.busy = true;
     try {
       await action();
