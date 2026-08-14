@@ -1,49 +1,54 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-title>
-      {{ chat.room()?.name }}
-      <span class="status">{{ statusLabel }}</span>
-    </ion-title>
-    <ion-buttons slot="end">
-      <ion-button
-        [disabled]="!chat.canSend() || micBusy"
-        (click)="toggleMic()"
-        [title]="chat.micOn() ? 'Fechar microfone' : 'Abrir microfone'"
-      >
-        <ion-icon
-          slot="icon-only"
-          [color]="chat.micOn() ? 'primary' : undefined"
-          [name]="chat.micOn() ? 'mic' : 'mic-off-outline'"
-        ></ion-icon>
-      </ion-button>
-      <ion-button
-        [disabled]="!chat.canSend() || cameraBusy"
-        (click)="toggleCamera()"
-        [title]="chat.cameraOn() ? 'Desligar câmera' : 'Ligar câmera'"
-      >
-        <ion-icon
-          slot="icon-only"
-          [color]="chat.cameraOn() ? 'primary' : undefined"
-          [name]="chat.cameraOn() ? 'videocam' : 'videocam-outline'"
-        ></ion-icon>
-      </ion-button>
-      <ion-button (click)="sound.toggleMute()"
-        [title]="sound.muted() ? 'Ativar avisos sonoros' : 'Silenciar avisos sonoros'"
-      >
-        <ion-icon
-          slot="icon-only"
-          [name]="sound.muted() ? 'volume-mute-outline' : 'volume-high-outline'"
-        ></ion-icon>
-      </ion-button>
-      <ion-button (click)="showFingerprints = !showFingerprints" title="Impressões digitais">
-        <ion-icon slot="icon-only" name="finger-print-outline"></ion-icon>
-      </ion-button>
-      <ion-button color="danger" (click)="confirmLeave()" title="Sair">
-        <ion-icon slot="icon-only" name="exit-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
+<!-- Sem barra: só uma pílula com o essencial, para o vídeo ocupar a tela. -->
+<div class="room-badge">
+  <strong>{{ chat.room()?.name }}</strong>
+  <span class="status">{{ statusLabel }}</span>
+</div>
+
+<button
+  class="floating settings"
+  type="button"
+  id="settings-trigger"
+  title="Configurações"
+  [class.shifted]="chatOpen"
+>
+  <ion-icon name="settings-outline"></ion-icon>
+</button>
+
+<ion-popover trigger="settings-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+  <ng-template>
+    <ion-content>
+      <ion-list lines="none">
+        <ion-item
+          button
+          [detail]="false"
+          (click)="showFingerprints = true"
+          title="Impressões digitais"
+        >
+          <ion-icon slot="start" name="finger-print-outline"></ion-icon>
+          <ion-label>Impressões digitais</ion-label>
+        </ion-item>
+
+        <ion-item button [detail]="false" (click)="theme.toggle()" title="Trocar tema">
+          <ion-icon slot="start" [name]="theme.isDark ? 'sunny-outline' : 'moon-outline'"></ion-icon>
+          <ion-label>{{ theme.isDark ? 'Tema claro' : 'Tema escuro' }}</ion-label>
+        </ion-item>
+
+        <ion-item button [detail]="false" (click)="sound.toggleMute()" title="Avisos sonoros">
+          <ion-icon
+            slot="start"
+            [name]="sound.muted() ? 'volume-mute-outline' : 'volume-high-outline'"
+          ></ion-icon>
+          <ion-label>{{ sound.muted() ? 'Ativar avisos' : 'Silenciar avisos' }}</ion-label>
+        </ion-item>
+
+        <ion-item button [detail]="false" (click)="confirmLeave()" title="Sair">
+          <ion-icon slot="start" name="exit-outline" color="danger"></ion-icon>
+          <ion-label color="danger">Sair da conversa</ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+  </ng-template>
+</ion-popover>
 
 <!-- Um elemento por microfone aberto: o som toca com as câmeras desligadas, e
      os <video> são mudos para garantir o autoplay. -->
@@ -110,6 +115,15 @@
   <ion-card class="fingerprints" *ngIf="showFingerprints">
     <ion-card-header>
       <ion-card-subtitle>impressões digitais</ion-card-subtitle>
+      <ion-button
+        class="close"
+        fill="clear"
+        size="small"
+        title="Fechar impressões digitais"
+        (click)="showFingerprints = false"
+      >
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
     </ion-card-header>
     <ion-card-content>
       <p class="warning">
@@ -187,13 +201,37 @@
   </footer>
 </aside>
 
-<button
-  class="chat-toggle"
-  type="button"
-  [class.shifted]="chatOpen"
-  (click)="toggleChat()"
-  [title]="chatOpen ? 'Fechar conversa' : 'Abrir conversa'"
->
-  <ion-icon [name]="chatOpen ? 'close-outline' : 'chatbubble-ellipses'"></ion-icon>
-  <span class="badge" *ngIf="unread > 0">{{ unread }}</span>
-</button>
+<!-- Controles da chamada: perto do polegar, longe do menu de configuração. -->
+<div class="controls" [class.shifted]="chatOpen">
+  <button
+    class="control"
+    type="button"
+    [class.on]="chat.micOn()"
+    [disabled]="!chat.canSend() || micBusy"
+    (click)="toggleMic()"
+    [title]="chat.micOn() ? 'Fechar microfone' : 'Abrir microfone'"
+  >
+    <ion-icon [name]="chat.micOn() ? 'mic' : 'mic-off-outline'"></ion-icon>
+  </button>
+
+  <button
+    class="control"
+    type="button"
+    [class.on]="chat.cameraOn()"
+    [disabled]="!chat.canSend() || cameraBusy"
+    (click)="toggleCamera()"
+    [title]="chat.cameraOn() ? 'Desligar câmera' : 'Ligar câmera'"
+  >
+    <ion-icon [name]="chat.cameraOn() ? 'videocam' : 'videocam-outline'"></ion-icon>
+  </button>
+
+  <button
+    class="control chat-toggle"
+    type="button"
+    (click)="toggleChat()"
+    [title]="chatOpen ? 'Fechar conversa' : 'Abrir conversa'"
+  >
+    <ion-icon [name]="chatOpen ? 'close-outline' : 'chatbubble-ellipses'"></ion-icon>
+    <span class="badge" *ngIf="unread > 0">{{ unread }}</span>
+  </button>
+</div>

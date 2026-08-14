@@ -1,2 +1,47 @@
 // For information on how to create your own theme, please refer to:
 // https://ionicframework.com/docs/theming/
+
+/*
+ * Paleta do app.
+ *
+ * As telas usam estes tokens em vez de cores fixas: é o que permite o botão
+ * de tema trocar entre claro e escuro. O padrão aqui é o claro; o bloco
+ * `.ion-palette-dark` reescreve os mesmos nomes, e o ThemeService só liga e
+ * desliga essa classe no <html>.
+ */
+
+:root {
+  --app-bg: #f4f6f9;
+  --app-surface: #ffffff;
+  --app-surface-sunken: #eef1f5;
+  --app-border: rgba(0, 0, 0, 0.1);
+  --app-text: #1b2027;
+  --app-text-soft: #59636e;
+  --app-text-faint: #7c8794;
+
+  // Botões redondos sobre fundo claro precisam de contorno mais firme que as
+  // bordas de card, senão somem no fundo.
+  --app-control-border: rgba(0, 0, 0, 0.18);
+
+  // Fundo de vídeo e quadro sem câmera: escuro nos dois temas, porque atrás
+  // deles há imagem de câmera, não superfície da interface.
+  --app-video-bg: #000000;
+  --app-tile-bg: #16191d;
+  --app-avatar-bg: #2b313a;
+  --app-avatar-text: #e7ebf0;
+  --app-on-media: #ffffff;
+  --app-on-media-bg: rgba(0, 0, 0, 0.55);
+
+  --app-speaking: #34c759;
+}
+
+:root.ion-palette-dark {
+  --app-bg: #0d0f12;
+  --app-surface: #16191d;
+  --app-surface-sunken: #0f1215;
+  --app-border: rgba(255, 255, 255, 0.09);
+  --app-text: #f2f5f8;
+  --app-text-soft: #98a2ad;
+  --app-text-faint: #7d8792;
+  --app-control-border: rgba(255, 255, 255, 0.14);
+}

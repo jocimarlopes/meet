@@ -4,6 +4,7 @@ import { AlertController, ToastController } from '@ionic/angular';
 
 import { ChatService, Participant } from '../core/services/chat.service';
 import { SoundService } from '../core/services/sound.service';
+import { ThemeService } from '../core/services/theme.service';
 
 @Component({
   selector: 'app-chat',
@@ -17,6 +18,7 @@ export class ChatPage {
   private readonly toasts = inject(ToastController);
   readonly chat = inject(ChatService);
   readonly sound = inject(SoundService);
+  readonly theme = inject(ThemeService);
 
   @ViewChild('messageList') private messageList?: ElementRef<HTMLElement>;
 

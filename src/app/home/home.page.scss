@@ -1,7 +1,7 @@
 /* Mesma paleta do palco da conversa, para as duas telas parecerem uma coisa só. */
 .welcome {
-  --background: #0d0f12;
-  --color: #e7ebf0;
+  --background: var(--app-bg);
+  --color: var(--app-text);
   --padding-start: 20px;
   --padding-end: 20px;
   --padding-top: 32px;
@@ -30,22 +30,22 @@
     font-size: 1.6rem;
     font-weight: 600;
     letter-spacing: -0.01em;
-    color: #f2f5f8;
+    color: var(--app-text);
   }
 
   p {
     margin: 0;
     font-size: 0.88rem;
     line-height: 1.55;
-    color: #98a2ad;
+    color: var(--app-text-soft);
   }
 }
 
 .card {
   padding: 20px;
   border-radius: 14px;
-  background: #16191d;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
 
   label {
     display: block;
@@ -54,14 +54,14 @@
     font-weight: 600;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: #8b95a1;
+    color: var(--app-text-faint);
   }
 
   ion-input {
-    --background: #0f1215;
-    --color: #e7ebf0;
-    --placeholder-color: #6a747f;
-    --border-color: rgba(255, 255, 255, 0.14);
+    --background: var(--app-surface-sunken);
+    --color: var(--app-text);
+    --placeholder-color: var(--app-text-faint);
+    --border-color: var(--app-border);
     --highlight-color-focused: var(--ion-color-primary);
     --padding-start: 14px;
     --padding-end: 14px;
@@ -84,7 +84,7 @@
     margin: 14px 2px 0;
     font-size: 0.78rem;
     line-height: 1.5;
-    color: #7d8792;
+    color: var(--app-text-faint);
   }
 }
 
@@ -92,7 +92,7 @@
 .invited {
   text-align: center;
   border-color: rgba(var(--ion-color-primary-rgb), 0.45);
-  background: linear-gradient(180deg, rgba(var(--ion-color-primary-rgb), 0.12), #16191d 70%);
+  background: linear-gradient(180deg, rgba(var(--ion-color-primary-rgb), 0.12), var(--app-surface) 70%);
 
   ion-icon {
     font-size: 1.7rem;
@@ -103,14 +103,14 @@
     margin: 8px 0 6px;
     font-size: 1.05rem;
     font-weight: 600;
-    color: #f2f5f8;
+    color: var(--app-text);
   }
 
   p {
     margin: 0;
     font-size: 0.84rem;
     line-height: 1.5;
-    color: #98a2ad;
+    color: var(--app-text-soft);
   }
 }
 
@@ -128,13 +128,13 @@
     gap: 10px;
     font-size: 0.79rem;
     line-height: 1.5;
-    color: #7d8792;
+    color: var(--app-text-faint);
   }
 
   ion-icon {
     flex: none;
     margin-top: 2px;
     font-size: 0.95rem;
-    color: #5e6873;
+    color: var(--app-text-faint);
   }
 }

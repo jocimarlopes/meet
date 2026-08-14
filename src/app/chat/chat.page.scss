@@ -1,23 +1,69 @@
 $drawer-width: 360px;
-$speaking: #34c759;
-/* Altura da ion-toolbar no modo md, usado pelo app. */
-$toolbar-height: 56px;
 
-ion-title .status {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 400;
-  color: var(--ion-color-medium);
-  text-transform: lowercase;
+/* --- pílula da sala e engrenagem ------------------------------------------ */
+
+.room-badge {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 15;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-control-border);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+
+  strong {
+    display: block;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--app-text);
+  }
+
+  .status {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--app-text-soft);
+    text-transform: lowercase;
+  }
+}
+
+.floating {
+  position: fixed;
+  /* Acima da gaveta: aberta, ela cobre todo o lado direito da tela. */
+  z-index: 25;
+  width: 44px;
+  height: 44px;
+  transition: transform 0.25s ease;
+  border: 1px solid var(--app-control-border);
+  border-radius: 50%;
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.2rem;
+  }
+
+  &.settings {
+    top: 14px;
+    right: 14px;
+  }
+
+  &.shifted {
+    transform: translateX(calc(-1 * min(100vw, #{$drawer-width}) + 8px));
+  }
 }
 
 /* --- palco ---------------------------------------------------------------- */
 
 .stage {
-  --background: #0d0f12;
+  --background: var(--app-bg);
   --padding-start: 12px;
   --padding-end: 12px;
-  --padding-top: 12px;
+  --padding-top: 68px;
   --padding-bottom: 12px;
 
   /* Com espaço de sobra, o palco encolhe em vez de ficar atrás da gaveta. */
@@ -66,13 +112,13 @@ ion-title .status {
   min-height: 0;
   border-radius: 12px;
   overflow: hidden;
-  background: #16191d;
+  background: var(--app-tile-bg);
   /* A borda existe sempre, transparente, para não empurrar o layout ao acender. */
   border: 3px solid transparent;
   transition: border-color 0.12s ease;
 
   &.speaking {
-    border-color: $speaking;
+    border-color: var(--app-speaking);
   }
 
   &.offline {
@@ -84,7 +130,7 @@ ion-title .status {
     height: 100%;
     /* Encaixa a imagem inteira: melhor uma borda que um rosto cortado. */
     object-fit: contain;
-    background: #000;
+    background: var(--app-video-bg);
   }
 
   &.self video {
@@ -105,8 +151,8 @@ ion-title .status {
       width: clamp(56px, 22%, 104px);
       aspect-ratio: 1;
       border-radius: 50%;
-      background: #2b313a;
-      color: #e7ebf0;
+      background: var(--app-avatar-bg);
+      color: var(--app-avatar-text);
       font-size: clamp(1.1rem, 4vw, 2rem);
       font-weight: 600;
       letter-spacing: 0.02em;
@@ -123,8 +169,8 @@ ion-title .status {
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 0.76rem;
-    color: #fff;
-    background: rgba(0, 0, 0, 0.55);
+    color: var(--app-on-media);
+    background: var(--app-on-media-bg);
   }
 
   .mic-state {
@@ -132,7 +178,7 @@ ion-title .status {
     opacity: 0.75;
 
     &.live {
-      color: $speaking;
+      color: var(--app-speaking);
       opacity: 1;
     }
   }
@@ -144,8 +190,8 @@ ion-title .status {
     padding: 3px 8px;
     border-radius: 6px;
     font-size: 0.68rem;
-    color: #fff;
-    background: rgba(0, 0, 0, 0.5);
+    color: var(--app-on-media);
+    background: var(--app-on-media-bg);
   }
 }
 
@@ -158,12 +204,12 @@ ion-title .status {
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: #9aa3ad;
+  color: var(--app-text-soft);
   padding: 24px;
 
   h2 {
     font-size: 1.1rem;
-    color: #e7ebf0;
+    color: var(--app-text);
     margin: 12px 0 4px;
   }
 
@@ -202,12 +248,23 @@ ion-title .status {
 /* --- digitais ------------------------------------------------------------- */
 
 .fingerprints {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 5;
+  position: fixed;
+  top: 68px;
+  right: 14px;
+  z-index: 24;
   width: min(92vw, 24rem);
   margin: 0;
+
+  ion-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .close {
+    margin: -4px -6px 0 0;
+  }
 
   .warning {
     margin: 0 0 16px;
@@ -237,9 +294,7 @@ ion-title .status {
 
 .chat-drawer {
   position: fixed;
-  /* Abaixo da barra: com a gaveta aberta, microfone, câmera e sair precisam
-     continuar alcançáveis. */
-  top: calc(#{$toolbar-height} + var(--ion-safe-area-top, 0px));
+  top: 0;
   right: 0;
   bottom: 0;
   z-index: 20;
@@ -354,29 +409,61 @@ ion-title .status {
   }
 }
 
-/* --- botão da conversa ---------------------------------------------------- */
+/* --- controles da chamada ------------------------------------------------- */
 
-.chat-toggle {
+.controls {
   position: fixed;
   right: 18px;
   bottom: 18px;
   z-index: 25;
-  width: 54px;
-  height: 54px;
-  border: none;
-  border-radius: 50%;
-  background: var(--ion-color-primary);
-  color: var(--ion-color-primary-contrast);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   transition: transform 0.25s ease;
-
-  ion-icon {
-    font-size: 1.4rem;
-  }
 
   &.shifted {
     transform: translateX(calc(-1 * min(100vw, #{$drawer-width}) + 8px));
+  }
+}
+
+.control {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--app-control-border);
+  border-radius: 50%;
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+
+  ion-icon {
+    font-size: 1.35rem;
+  }
+
+  /* Ligado é estado, não ação: destaque cheio para ser lido de relance. */
+  &.on {
+    background: var(--ion-color-primary);
+    border-color: transparent;
+    color: var(--ion-color-primary-contrast);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &.chat-toggle {
+    background: var(--ion-color-primary);
+    border-color: transparent;
+    color: var(--ion-color-primary-contrast);
+    width: 56px;
+    height: 56px;
+
+    ion-icon {
+      font-size: 1.45rem;
+    }
   }
 
   .badge {
@@ -388,7 +475,7 @@ ion-title .status {
     padding: 0 5px;
     border-radius: 10px;
     background: var(--ion-color-danger);
-    color: #fff;
+    color: var(--app-on-media);
     font-size: 0.7rem;
     line-height: 20px;
   }

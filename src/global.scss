@@ -32,6 +32,10 @@
  * https://ionicframework.com/docs/theming/dark-mode
  */
 
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import "@ionic/angular/css/palettes/dark.system.css";
+/*
+ * Por classe, não pelo sistema: o app tem botão de tema, e `dark.system`
+ * seguiria a preferência do SO sem deixar o usuário mudar. O ThemeService
+ * ainda inicia pela preferência do sistema — só passa a ser possível
+ * discordar dela.
+ */
+@import "@ionic/angular/css/palettes/dark.class.css";
