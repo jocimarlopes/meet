@@ -98,6 +98,15 @@ export class ChatService {
     }
     return Math.max(0, Math.round(room.expires_at * 1000 - this.agora()) / 1000);
   });
+
+  /** Há quanto tempo a sala está aberta. Somado ao restante, dá o prazo total. */
+  readonly elapsedSeconds = computed(() => {
+    const room = this.room();
+    if (!room) {
+      return null;
+    }
+    return Math.max(0, Math.round((this.agora() - room.created_at * 1000) / 1000));
+  });
   readonly connectedCount = computed(
     () => this.participants().filter((p) => p.connected).length,
   );

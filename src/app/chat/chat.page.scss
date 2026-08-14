@@ -28,7 +28,8 @@ $drawer-width: 360px;
     text-transform: lowercase;
   }
 
-  /* A sala tem prazo: acabar sem aviso pareceria falha, não regra. */
+  /* Cronômetro da conversa; o prazo restante vem junto, porque uma sala que
+     acaba sozinha sem aviso pareceria falha, não regra. */
   .clock {
     display: flex;
     align-items: center;
@@ -37,8 +38,19 @@ $drawer-width: 360px;
     font-size: 0.68rem;
     color: var(--app-text-faint);
 
+    .elapsed {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--app-text-soft);
+    }
+
     &.short {
       color: var(--ion-color-danger);
+
+      .elapsed,
+      .left {
+        color: var(--ion-color-danger);
+      }
     }
   }
 }

@@ -85,6 +85,17 @@ export class ChatPage {
     return id ? new URL(`entrar/${id}`, document.baseURI).href : '';
   }
 
+  /** Tempo de conversa, no formato de cronômetro de chamada. */
+  get elapsedLabel(): string {
+    const segundos = this.chat.elapsedSeconds();
+    if (segundos === null) {
+      return '';
+    }
+    const minutos = Math.floor(segundos / 60);
+    const resto = Math.floor(segundos % 60);
+    return `${minutos}:${String(resto).padStart(2, '0')}`;
+  }
+
   /** Tempo restante da sala, curto e legível. Vazio quando ainda sobra folga. */
   get timeLeftLabel(): string {
     const segundos = this.chat.secondsLeft();
