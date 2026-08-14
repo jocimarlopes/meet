@@ -4,6 +4,7 @@ import {
   PeerView,
   RoomView,
   ServerMessage,
+  Visibility,
   normalizeNick,
 } from '../models/signaling.models';
 import { MeshService } from './mesh.service';
@@ -87,6 +88,16 @@ export class ChatService {
   readonly participants = signal<Participant[]>([]);
 
   readonly isActive = computed(() => this.status() !== 'idle');
+
+  /** Segundos até a sala vencer; recalculado a cada tique do relógio. */
+  private readonly agora = signal(Date.now());
+  readonly secondsLeft = computed(() => {
+    const room = this.room();
+    if (!room) {
+      return null;
+    }
+    return Math.max(0, Math.round(room.expires_at * 1000 - this.agora()) / 1000);
+  });
   readonly connectedCount = computed(
     () => this.participants().filter((p) => p.connected).length,
   );
@@ -155,6 +166,7 @@ export class ChatService {
 
   private identity: Identity | null = null;
   private readonly peers = new Map<string, PeerIdentity>();
+  private visibility: Visibility = 'private';
   private closingOnPurpose = false;
   private reconnectAttempts = 0;
 
@@ -197,6 +209,13 @@ export class ChatService {
       this.announceMedia(nick, kind, active);
     });
 
+    // Relógio de baixa frequência, só para a tela mostrar o tempo restante.
+    setInterval(() => {
+      if (this.room()) {
+        this.agora.set(Date.now());
+      }
+    }, 1000);
+
     // Mantém um medidor de nível por microfone aberto — o seu inclusive, para
     // você ver que está sendo captado.
     effect(() => {
@@ -212,14 +231,16 @@ export class ChatService {
 
   // -- ações do usuário ----------------------------------------------------
 
-  async createRoom(nick: string): Promise<void> {
+  async createRoom(nick: string, visibility: Visibility = 'private'): Promise<void> {
     await this.prepare(nick);
+    this.visibility = visibility;
     this.role.set('host');
     await this.signaling.connect();
     this.signaling.send({
       type: 'create_room',
       name: `Sala de ${nick}`,
       nick,
+      visibility,
       public_key: this.identity!.publicKeyArmored,
     });
   }
@@ -375,6 +396,7 @@ export class ChatService {
           type: 'create_room',
           name: room.name,
           nick: identity.nick,
+          visibility: this.visibility,
           public_key: identity.publicKeyArmored,
           room_id: room.id,
         });

@@ -3,13 +3,18 @@
  * Qualquer mudança aqui precisa acompanhar o backend.
  */
 
+export type Visibility = 'public' | 'private';
+
 export interface RoomView {
   id: string;
   name: string;
+  visibility: Visibility;
   host_nick: string | null;
   occupants: number;
   capacity: number;
   created_at: number;
+  /** Momento em que a sala vence, em segundos. Teto duro, não inatividade. */
+  expires_at: number;
 }
 
 export interface PeerView {
@@ -30,6 +35,7 @@ export interface CreateRoomMessage {
   type: 'create_room';
   name: string;
   nick: string;
+  visibility: Visibility;
   public_key: string;
   room_id?: string;
 }
@@ -107,6 +113,7 @@ export interface PongMessage {
 
 export type SignalingErrorCode =
   | 'room_not_found'
+  | 'room_expired'
   | 'room_full'
   | 'nick_taken'
   | 'not_in_room'

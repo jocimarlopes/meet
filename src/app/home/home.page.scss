@@ -155,3 +155,104 @@
     color: var(--app-text-faint);
   }
 }
+
+/* Escolha de visibilidade: dois cartões, um selecionado. */
+.visibility {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  button {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--app-border);
+    background: var(--app-surface-sunken);
+    color: var(--app-text-soft);
+    cursor: pointer;
+    text-align: left;
+
+    ion-icon {
+      font-size: 1.05rem;
+    }
+
+    strong {
+      font-size: 0.85rem;
+      color: var(--app-text);
+    }
+
+    small {
+      font-size: 0.7rem;
+      line-height: 1.35;
+    }
+
+    &.on {
+      border-color: var(--ion-color-primary);
+      background: rgba(var(--ion-color-primary-rgb), 0.12);
+
+      ion-icon,
+      strong {
+        color: var(--ion-color-primary);
+      }
+    }
+  }
+}
+
+/* Vitrine das salas públicas. */
+.rooms {
+  h2 {
+    margin: 0 0 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--app-text-faint);
+  }
+
+  .room {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--app-border);
+    background: var(--app-surface-sunken);
+    color: var(--app-text);
+    cursor: pointer;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .who {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    strong {
+      font-size: 0.9rem;
+    }
+
+    small {
+      font-size: 0.72rem;
+      color: var(--app-text-faint);
+    }
+
+    ion-icon {
+      color: var(--app-text-faint);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+    }
+  }
+}

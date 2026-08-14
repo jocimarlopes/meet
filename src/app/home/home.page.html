@@ -40,6 +40,27 @@
         2 a 24 caracteres.
       </ion-note>
 
+      <div class="visibility" *ngIf="!invited">
+        <button
+          type="button"
+          [class.on]="visibility === 'private'"
+          (click)="visibility = 'private'"
+        >
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          <strong>Privada</strong>
+          <small>só entra quem receber o link</small>
+        </button>
+        <button
+          type="button"
+          [class.on]="visibility === 'public'"
+          (click)="visibility = 'public'"
+        >
+          <ion-icon name="globe-outline"></ion-icon>
+          <strong>Pública</strong>
+          <small>aparece na lista abaixo</small>
+        </button>
+      </div>
+
       <ion-button expand="block" [disabled]="!canSubmit" (click)="submit()">
         <ion-spinner *ngIf="busy" name="dots" slot="start"></ion-spinner>
         <ion-icon *ngIf="!busy" [name]="invited ? 'enter-outline' : 'add-circle-outline'" slot="start"></ion-icon>
@@ -47,8 +68,25 @@
       </ion-button>
 
       <p class="explain" *ngIf="!invited">
-        Você recebe um link para mandar a quem quiser conversar. Cabem 5 pessoas.
+        Cabem 10 pessoas e a sala dura 30 minutos.
       </p>
+    </section>
+
+    <section class="card rooms" *ngIf="!invited && publicRooms.length > 0">
+      <h2>Salas abertas agora</h2>
+      <button
+        class="room"
+        type="button"
+        *ngFor="let room of publicRooms; trackBy: trackRoom"
+        [disabled]="busy"
+        (click)="joinPublic(room)"
+      >
+        <span class="who">
+          <strong>{{ room.name }}</strong>
+          <small>{{ room.occupants }} de {{ room.capacity }} · {{ vagas(room) }} vagas</small>
+        </span>
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </button>
     </section>
 
     <ul class="facts">
@@ -58,7 +96,7 @@
       </li>
       <li>
         <ion-icon name="eye-off-outline"></ion-icon>
-        Salas não aparecem em lista nenhuma: só entra quem tem o link.
+        Sala privada não aparece em lista nenhuma: só entra quem tem o link.
       </li>
       <li>
         <ion-icon name="trash-outline"></ion-icon>

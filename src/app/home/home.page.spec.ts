@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { provideRouter } from '@angular/router';
@@ -13,7 +15,7 @@ describe('HomePage', () => {
     await TestBed.configureTestingModule({
       declarations: [HomePage],
       imports: [IonicModule.forRoot(), FormsModule],
-      providers: [provideRouter([])],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HomePage);
@@ -50,6 +52,10 @@ describe('HomePage', () => {
 
     component.busy = true;
     expect(component.canCreate).toBeFalse();
+  });
+
+  it('a sala nasce privada', () => {
+    expect(component.visibility).toEqual('private');
   });
 
   it('entrar exige apelido e código do convite', () => {

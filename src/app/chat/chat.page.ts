@@ -85,6 +85,24 @@ export class ChatPage {
     return id ? new URL(`entrar/${id}`, document.baseURI).href : '';
   }
 
+  /** Tempo restante da sala, curto e legível. Vazio quando ainda sobra folga. */
+  get timeLeftLabel(): string {
+    const segundos = this.chat.secondsLeft();
+    if (segundos === null) {
+      return '';
+    }
+    const minutos = Math.floor(segundos / 60);
+    return minutos >= 1
+      ? `${minutos} min restantes`
+      : `${Math.floor(segundos)}s restantes`;
+  }
+
+  /** Abaixo de 5 minutos o aviso ganha destaque. */
+  get timeIsShort(): boolean {
+    const segundos = this.chat.secondsLeft();
+    return segundos !== null && segundos <= 300;
+  }
+
   /** Iniciais para o quadro de quem está sem câmera. */
   initials(nick: string): string {
     const parts = nick.trim().split(/\s+/).filter(Boolean);

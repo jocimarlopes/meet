@@ -27,6 +27,20 @@ $drawer-width: 360px;
     color: var(--app-text-soft);
     text-transform: lowercase;
   }
+
+  /* A sala tem prazo: acabar sem aviso pareceria falha, não regra. */
+  .clock {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+    font-size: 0.68rem;
+    color: var(--app-text-faint);
+
+    &.short {
+      color: var(--ion-color-danger);
+    }
+  }
 }
 
 /* Engrenagem e sair, juntos no canto. */
@@ -122,6 +136,19 @@ $drawer-width: 360px;
   &[data-count='5'],
   &[data-count='6'] {
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+
+  /* De 7 a 10 pessoas os quadros ficam pequenos, mas todos aparecem. */
+  &[data-count='7'],
+  &[data-count='8'] {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+
+  &[data-count='9'],
+  &[data-count='10'] {
+    grid-template-columns: repeat(5, 1fr);
     grid-template-rows: repeat(2, 1fr);
   }
 }

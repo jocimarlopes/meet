@@ -1,11 +1,15 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
+import { Subscription, interval, startWith, switchMap } from 'rxjs';
 
-import { isValidNick } from '../core/models/signaling.models';
+import { RoomView, Visibility, isValidNick } from '../core/models/signaling.models';
 import { ChatService } from '../core/services/chat.service';
+import { RoomsService } from '../core/services/rooms.service';
 import { SoundService } from '../core/services/sound.service';
 import { ThemeService } from '../core/services/theme.service';
+
+const REFRESH_INTERVAL_MS = 5_000;
 
 @Component({
   selector: 'app-home',
@@ -13,19 +17,24 @@ import { ThemeService } from '../core/services/theme.service';
   styleUrls: ['home.page.scss'],
   standalone: false,
 })
-export class HomePage {
+export class HomePage implements OnDestroy {
   private readonly chat = inject(ChatService);
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastController);
   private readonly sound = inject(SoundService);
   private readonly route = inject(ActivatedRoute);
+  private readonly rooms = inject(RoomsService);
   readonly theme = inject(ThemeService);
 
   nick = '';
   inviteCode = '';
   busy = false;
+  visibility: Visibility = 'private';
+  publicRooms: RoomView[] = [];
   /** Chegou por link de convite: só falta o apelido. */
   invited = false;
+
+  private polling?: Subscription;
 
   get nickIsValid(): boolean {
     return isValidNick(this.nick);
@@ -57,14 +66,63 @@ export class HomePage {
     if (code) {
       this.inviteCode = code;
       this.invited = true;
+      return;
     }
+    this.startPolling();
+  }
+
+  ionViewWillLeave(): void {
+    this.stopPolling();
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
+  }
+
+  private startPolling(): void {
+    this.stopPolling();
+    this.polling = interval(REFRESH_INTERVAL_MS)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.rooms.listPublicRooms()),
+      )
+      .subscribe({
+        next: (rooms) => (this.publicRooms = rooms),
+        // Sem servidor a vitrine só fica vazia; criar sala por link continua
+        // valendo, então não vale interromper a tela com erro.
+        error: () => setTimeout(() => this.startPolling(), REFRESH_INTERVAL_MS),
+      });
+  }
+
+  private stopPolling(): void {
+    this.polling?.unsubscribe();
+    this.polling = undefined;
   }
 
   async createRoom(): Promise<void> {
     if (!this.canCreate) {
       return;
     }
-    await this.enterSession(() => this.chat.createRoom(this.nick.trim()));
+    await this.enterSession(() =>
+      this.chat.createRoom(this.nick.trim(), this.visibility),
+    );
+  }
+
+  /** Entrar numa sala da vitrine é igual a entrar por link: só falta o apelido. */
+  async joinPublic(room: RoomView): Promise<void> {
+    if (!this.nickIsValid) {
+      await this.toast('Escolha um apelido antes de entrar.', 'warning');
+      return;
+    }
+    await this.enterSession(() => this.chat.joinRoom(room.id, this.nick.trim()));
+  }
+
+  trackRoom(_index: number, room: RoomView): string {
+    return room.id;
+  }
+
+  vagas(room: RoomView): number {
+    return room.capacity - room.occupants;
   }
 
   async joinRoom(): Promise<void> {

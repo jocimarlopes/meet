@@ -2,6 +2,10 @@
 <div class="room-badge">
   <strong>{{ chat.room()?.name }}</strong>
   <span class="status">{{ statusLabel }}</span>
+  <span class="clock" *ngIf="timeLeftLabel" [class.short]="timeIsShort">
+    <ion-icon name="time-outline"></ion-icon>
+    {{ timeLeftLabel }}
+  </span>
 </div>
 
 <div class="corner-actions" [class.shifted]="chatOpen">
