@@ -5,6 +5,7 @@ import { ToastController } from '@ionic/angular';
 import { isValidNick } from '../core/models/signaling.models';
 import { ChatService } from '../core/services/chat.service';
 import { SoundService } from '../core/services/sound.service';
+import { ThemeService } from '../core/services/theme.service';
 
 @Component({
   selector: 'app-home',
@@ -18,6 +19,7 @@ export class HomePage {
   private readonly toasts = inject(ToastController);
   private readonly sound = inject(SoundService);
   private readonly route = inject(ActivatedRoute);
+  readonly theme = inject(ThemeService);
 
   nick = '';
   inviteCode = '';

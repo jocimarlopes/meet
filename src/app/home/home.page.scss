@@ -1,3 +1,21 @@
+.theme-toggle {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--app-control-border);
+  border-radius: 50%;
+  background: var(--app-surface);
+  color: var(--app-text);
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.1rem;
+  }
+}
+
 /* Mesma paleta do palco da conversa, para as duas telas parecerem uma coisa só. */
 .welcome {
   --background: var(--app-bg);

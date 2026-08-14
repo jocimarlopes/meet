@@ -4,15 +4,15 @@
   <span class="status">{{ statusLabel }}</span>
 </div>
 
-<button
-  class="floating settings"
-  type="button"
-  id="settings-trigger"
-  title="Configurações"
-  [class.shifted]="chatOpen"
->
-  <ion-icon name="settings-outline"></ion-icon>
-</button>
+<div class="corner-actions" [class.shifted]="chatOpen">
+  <button class="floating" type="button" id="settings-trigger" title="Configurações">
+    <ion-icon name="settings-outline"></ion-icon>
+  </button>
+
+  <button class="floating leave" type="button" title="Sair" (click)="chat.leave()">
+    <ion-icon name="exit-outline"></ion-icon>
+  </button>
+</div>
 
 <ion-popover trigger="settings-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
   <ng-template>
@@ -41,10 +41,6 @@
           <ion-label>{{ sound.muted() ? 'Ativar avisos' : 'Silenciar avisos' }}</ion-label>
         </ion-item>
 
-        <ion-item button [detail]="false" (click)="confirmLeave()" title="Sair">
-          <ion-icon slot="start" name="exit-outline" color="danger"></ion-icon>
-          <ion-label color="danger">Sair da conversa</ion-label>
-        </ion-item>
       </ion-list>
     </ion-content>
   </ng-template>

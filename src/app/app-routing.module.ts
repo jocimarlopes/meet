@@ -28,11 +28,11 @@ const routes: Routes = [
 
 @NgModule({
   imports: [
+    // Rotas por caminho, sem `#`. O GitHub Pages não tem fallback de rota, e é
+    // por isso que o deploy publica um 404.html idêntico ao index: o Pages o
+    // devolve em qualquer caminho desconhecido, o app inicia e a rota resolve.
     RouterModule.forRoot(routes, {
       preloadingStrategy: PreloadAllModules,
-      // GitHub Pages não tem fallback de rota: sem hash, dar F5 em /chat
-      // devolve 404.
-      useHash: true,
     }),
   ],
   exports: [RouterModule],

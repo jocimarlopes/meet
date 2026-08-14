@@ -29,13 +29,25 @@ $drawer-width: 360px;
   }
 }
 
-.floating {
+/* Engrenagem e sair, juntos no canto. */
+.corner-actions {
   position: fixed;
+  top: 14px;
+  right: 14px;
   /* Acima da gaveta: aberta, ela cobre todo o lado direito da tela. */
   z-index: 25;
+  display: flex;
+  gap: 8px;
+  transition: transform 0.25s ease;
+
+  &.shifted {
+    transform: translateX(calc(-1 * min(100vw, #{$drawer-width}) + 8px));
+  }
+}
+
+.floating {
   width: 44px;
   height: 44px;
-  transition: transform 0.25s ease;
   border: 1px solid var(--app-control-border);
   border-radius: 50%;
   background: var(--app-surface);
@@ -47,13 +59,10 @@ $drawer-width: 360px;
     font-size: 1.2rem;
   }
 
-  &.settings {
-    top: 14px;
-    right: 14px;
-  }
-
-  &.shifted {
-    transform: translateX(calc(-1 * min(100vw, #{$drawer-width}) + 8px));
+  /* Sair é irreversível e não pede confirmação: cor avisa antes do clique. */
+  &.leave {
+    border-color: rgba(var(--ion-color-danger-rgb), 0.5);
+    color: var(--ion-color-danger);
   }
 }
 

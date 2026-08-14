@@ -1,3 +1,12 @@
+<button
+  class="theme-toggle"
+  type="button"
+  (click)="theme.toggle()"
+  [title]="theme.isDark ? 'Tema claro' : 'Tema escuro'"
+>
+  <ion-icon [name]="theme.isDark ? 'sunny-outline' : 'moon-outline'"></ion-icon>
+</button>
+
 <ion-content class="welcome" scrollY="true">
   <div class="shell">
     <header class="brand">

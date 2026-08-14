@@ -16,10 +16,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Publicado em jocimarlopes.github.io/chat_p2p_frontend/, então os assets
-  # precisam ser buscados nesse prefixo — com '/' a página abre em branco.
-  # Se um dia migrar para domínio próprio, volte para '/'.
-  BASE_HREF: /chat_p2p_frontend/
+  # Publicado em jocimarlopes.github.io/meet/, então os assets precisam ser
+  # buscados nesse prefixo — com '/' a página abre em branco. Precisa bater
+  # com o nome do repositório. Migrando para domínio próprio, volte para '/'.
+  BASE_HREF: /meet/
 
 jobs:
   build:
@@ -36,7 +36,11 @@ jobs:
 
       - run: npx ng build --configuration production --base-href "$BASE_HREF"
 
-      # O app usa rotas com hash, então não precisa de 404.html.
+      # As rotas são por caminho, sem '#'. O Pages não tem fallback de rota, e
+      # abrir um link de convite direto cairia em 404. Servindo o mesmo HTML
+      # como 404.html, o app inicia e a rota resolve no cliente.
+      - run: cp www/index.html www/404.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: www

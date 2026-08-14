@@ -1,6 +1,6 @@
 import { Component, ElementRef, ViewChild, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, ToastController } from '@ionic/angular';
+import { ToastController } from '@ionic/angular';
 
 import { ChatService, Participant } from '../core/services/chat.service';
 import { SoundService } from '../core/services/sound.service';
@@ -14,7 +14,6 @@ import { ThemeService } from '../core/services/theme.service';
 })
 export class ChatPage {
   private readonly router = inject(Router);
-  private readonly alerts = inject(AlertController);
   private readonly toasts = inject(ToastController);
   readonly chat = inject(ChatService);
   readonly sound = inject(SoundService);
@@ -75,14 +74,15 @@ export class ChatPage {
     }
   }
 
-  /** Link pronto para colar: quem abrir cai direto na tela de apelido. */
+  /**
+   * Link pronto para colar: quem abrir cai direto na tela de apelido.
+   *
+   * Montado a partir de `document.baseURI` para respeitar o base href do
+   * deploy — em produção o app vive num subcaminho, não na raiz.
+   */
   get inviteLink(): string {
     const id = this.chat.room()?.id;
-    if (!id) {
-      return '';
-    }
-    const { origin, pathname } = window.location;
-    return `${origin}${pathname}#/entrar/${id}`;
+    return id ? new URL(`entrar/${id}`, document.baseURI).href : '';
   }
 
   /** Iniciais para o quadro de quem está sem câmera. */
@@ -159,19 +159,6 @@ export class ChatPage {
     }
     this.warnedAboutAudio = true;
     await this.toast('Toque na tela para liberar o áudio da conversa.', 'warning');
-  }
-
-  async confirmLeave(): Promise<void> {
-    const alert = await this.alerts.create({
-      header: 'Sair da conversa?',
-      message:
-        'As conexões são encerradas e o histórico some — ele só existe nesta aba.',
-      buttons: [
-        { text: 'Ficar', role: 'cancel' },
-        { text: 'Sair', role: 'destructive', handler: () => this.chat.leave() },
-      ],
-    });
-    await alert.present();
   }
 
   trackByNick(_index: number, entry: { nick: string }): string {
