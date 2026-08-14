@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Meet P2P">
+  <!--
+    Câmera com o corpo em forma de cadeado: diz "chamada de vídeo" e
+    "cifrado" numa figura só, sem virar dois desenhos empilhados que
+    sumiriam a 16px.
+  -->
+  <rect width="64" height="64" rx="15" fill="#3880ff" />
+
+  <!-- Arco do cadeado, sobre o corpo da câmera. -->
+  <path
+    d="M20 22v-3a8 8 0 0 1 16 0v3"
+    fill="none"
+    stroke="#fff"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+
+  <!-- Corpo da câmera. -->
+  <rect x="11" y="22" width="34" height="24" rx="6" fill="#fff" />
+
+  <!-- Lente lateral, que dá a leitura de câmera. -->
+  <path d="M49 28.5 58 24v16l-9-4.5z" fill="#fff" />
+</svg>
