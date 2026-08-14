@@ -117,7 +117,7 @@ export class ChatPage {
   }
 
   async toggleCamera(): Promise<void> {
-    if (this.cameraBusy || !this.chat.canSend()) {
+    if (this.cameraBusy || !this.chat.canUseMedia()) {
       return;
     }
     this.cameraBusy = true;
@@ -131,7 +131,7 @@ export class ChatPage {
   }
 
   async toggleMic(): Promise<void> {
-    if (this.micBusy || !this.chat.canSend()) {
+    if (this.micBusy || !this.chat.canUseMedia()) {
       return;
     }
     this.micBusy = true;

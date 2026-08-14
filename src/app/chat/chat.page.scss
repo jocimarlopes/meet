@@ -81,13 +81,23 @@ $drawer-width: 360px;
       --padding-end: calc(#{$drawer-width} + 20px);
     }
   }
+
+  /* Convite e quadros dividem a altura: sozinho, com a câmera ligada, você
+     precisa se ver — antes o convite tomava a tela e empurrava seu quadro
+     para fora dela. */
+  &::part(scroll) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 
 /* A grade acompanha a quantidade de gente, como numa chamada de vídeo. */
 .tiles {
   display: grid;
   gap: 10px;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   grid-template-columns: 1fr;
   align-content: center;
 
@@ -207,14 +217,14 @@ $drawer-width: 360px;
 /* --- convite -------------------------------------------------------------- */
 
 .waiting {
-  height: 100%;
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   color: var(--app-text-soft);
-  padding: 24px;
+  padding: 8px 24px 4px;
 
   h2 {
     font-size: 1.1rem;
@@ -337,8 +347,15 @@ $drawer-width: 360px;
     border-top: 1px solid rgba(128, 128, 128, 0.18);
   }
 
+  /* Cores explícitas, como na home: não deixa o campo depender do padrão do
+     navegador, que segue o sistema e não o tema escolhido aqui. */
   .composer {
     flex: 1;
+    --background: var(--app-surface-sunken);
+    --color: var(--app-text);
+    --placeholder-color: var(--app-text-faint);
+    --border-color: var(--app-border);
+    --highlight-color-focused: var(--ion-color-primary);
   }
 }
 

@@ -92,6 +92,15 @@ export class ChatService {
   );
   readonly canSend = computed(() => this.connectedCount() > 0);
 
+  /**
+   * Câmera e microfone não dependem de ter gente conectada: ligar sozinho é
+   * como conferir o enquadramento antes de chamar alguém. Quem entrar depois
+   * recebe as tracks já na primeira oferta.
+   */
+  readonly canUseMedia = computed(() =>
+    ['waiting', 'connecting', 'connected'].includes(this.status()),
+  );
+
   /** Câmera e microfone: os seus e os dos outros, por nick. */
   readonly localCamera = this.mesh.localCamera;
   readonly remoteCameras = this.mesh.remoteCameras;
@@ -257,7 +266,11 @@ export class ChatService {
       return;
     }
     await this.mesh.startMedia('audio');
-    this.pushSystem('Seu microfone está aberto — a sala ouve você.');
+    this.pushSystem(
+      this.connectedCount() > 0
+        ? 'Seu microfone está aberto — a sala ouve você.'
+        : 'Seu microfone está aberto. Quem entrar já vai te ouvir.',
+    );
   }
 
   leave(): void {

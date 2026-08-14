@@ -203,7 +203,7 @@
     class="control"
     type="button"
     [class.on]="chat.micOn()"
-    [disabled]="!chat.canSend() || micBusy"
+    [disabled]="!chat.canUseMedia() || micBusy"
     (click)="toggleMic()"
     [title]="chat.micOn() ? 'Fechar microfone' : 'Abrir microfone'"
   >
@@ -214,7 +214,7 @@
     class="control"
     type="button"
     [class.on]="chat.cameraOn()"
-    [disabled]="!chat.canSend() || cameraBusy"
+    [disabled]="!chat.canUseMedia() || cameraBusy"
     (click)="toggleCamera()"
     [title]="chat.cameraOn() ? 'Desligar câmera' : 'Ligar câmera'"
   >

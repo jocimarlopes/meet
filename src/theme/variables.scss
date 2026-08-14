@@ -11,6 +11,13 @@
  */
 
 :root {
+  /*
+   * Segue o tema do app, não o do sistema. Sem isto o navegador pinta campos
+   * nativos e barras de rolagem pela preferência do SO: com SO escuro e app
+   * claro, o texto digitado saía branco sobre fundo branco.
+   */
+  color-scheme: light;
+
   --app-bg: #f4f6f9;
   --app-surface: #ffffff;
   --app-surface-sunken: #eef1f5;
@@ -36,6 +43,8 @@
 }
 
 :root.ion-palette-dark {
+  color-scheme: dark;
+
   --app-bg: #0d0f12;
   --app-surface: #16191d;
   --app-surface-sunken: #0f1215;
