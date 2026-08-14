@@ -45,71 +45,20 @@
   </ion-toolbar>
 </ion-header>
 
-<!-- Um elemento de áudio por participante: o som toca com todas as câmeras
-     desligadas, e o <video> é mudo para garantir o autoplay. -->
+<!-- Um elemento por microfone aberto: o som toca com as câmeras desligadas, e
+     os <video> são mudos para garantir o autoplay. -->
 <audio
   *ngFor="let entry of chat.remoteMicList(); trackBy: trackByNick"
-  [attr.data-nick]="entry.nick"
   autoplay
   [srcObjectRef]="entry.stream"
   (playbackBlocked)="onAudioBlocked()"
 ></audio>
 
-<div class="video-panel" *ngIf="chat.anyVideo()">
-  <!-- O palco acompanha a largura dos vídeos, para a miniatura local ficar
-       ancorada neles e não na borda da janela. -->
-  <div class="stage">
-    <div class="grid" [attr.data-count]="chat.remoteCameraList().length">
-      <div class="tile" *ngFor="let entry of chat.remoteCameraList(); trackBy: trackByNick">
-        <video autoplay playsinline muted [srcObjectRef]="entry.stream"></video>
-        <span class="who">{{ entry.nick }}</span>
-      </div>
-
-      <p class="idle-camera" *ngIf="chat.remoteCameraList().length === 0">
-        Ninguém mais está com a câmera ligada
-      </p>
-    </div>
-
-    <video class="local" autoplay playsinline muted
-      *ngIf="chat.localCamera() as stream"
-      [srcObjectRef]="stream"
-    ></video>
-  </div>
-</div>
-
-<div class="live-audio" *ngIf="chat.remoteMicList().length > 0 && !chat.anyVideo()">
-  <ion-icon name="volume-high-outline"></ion-icon>
-  {{ micLabel }}
-</div>
-
-<ion-content class="ion-padding">
-  <ion-card class="fingerprints" *ngIf="showFingerprints">
-    <ion-card-header>
-      <ion-card-subtitle>impressões digitais</ion-card-subtitle>
-    </ion-card-header>
-    <ion-card-content>
-      <p class="warning">
-        Quem entrega as chaves é o servidor. Confirme estes códigos por outro
-        meio (ligação, presencialmente) para ter certeza de que ninguém está no
-        meio.
-      </p>
-      <div class="fingerprint">
-        <span class="who">{{ chat.myNick() }} (você)</span>
-        <code>{{ chat.formatFingerprint(chat.myFingerprint()) }}</code>
-      </div>
-      <div class="fingerprint" *ngFor="let peer of chat.participants(); trackBy: trackByPeer">
-        <span class="who">
-          {{ peer.nick }}
-          <ion-note *ngIf="!peer.connected">(conectando…)</ion-note>
-        </span>
-        <code>{{ chat.formatFingerprint(peer.fingerprint) }}</code>
-      </div>
-    </ion-card-content>
-  </ion-card>
-
-  <div class="waiting" *ngIf="chat.status() === 'waiting'">
+<ion-content class="stage" [class.drawer-open]="chatOpen" scrollY="false">
+  <!-- Aguardando alguém: o palco vira o convite. -->
+  <div class="waiting" *ngIf="chat.status() === 'waiting' && chat.participants().length === 0">
     <ion-spinner name="dots"></ion-spinner>
-    <h2>{{ chat.participants().length ? 'Sala aberta' : 'Convite pronto' }}</h2>
+    <h2>Convite pronto</h2>
     <p>Mande este link para quem você quer na conversa:</p>
 
     <button class="invite" type="button" (click)="copyInviteLink()">
@@ -119,16 +68,80 @@
 
     <p class="caveat">
       Quem abrir o link escolhe um apelido e entra direto. Cabem
-      {{ chat.room()?.capacity }} pessoas na sala; mantenha esta aba aberta.
+      {{ chat.room()?.capacity }} pessoas; mantenha esta aba aberta.
     </p>
   </div>
 
-  <div class="waiting" *ngIf="chat.status() === 'preparing' || chat.status() === 'connecting'">
-    <ion-spinner name="dots"></ion-spinner>
-    <p>{{ statusLabel }}</p>
+  <div class="tiles" *ngIf="chat.tiles().length > 0" [attr.data-count]="chat.tiles().length">
+    <div
+      class="tile"
+      *ngFor="let tile of chat.tiles(); trackBy: trackByNick"
+      [class.speaking]="tile.speaking"
+      [class.self]="tile.isSelf"
+      [class.offline]="!tile.connected"
+    >
+      <video
+        *ngIf="tile.camera as stream; else avatar"
+        autoplay
+        playsinline
+        muted
+        [srcObjectRef]="stream"
+      ></video>
+
+      <ng-template #avatar>
+        <div class="avatar">
+          <span>{{ initials(tile.nick) }}</span>
+        </div>
+      </ng-template>
+
+      <span class="who">
+        <ion-icon
+          class="mic-state"
+          [name]="tile.micOn ? 'mic' : 'mic-off'"
+          [class.live]="tile.speaking"
+        ></ion-icon>
+        {{ tile.nick }}<ng-container *ngIf="tile.isSelf"> (você)</ng-container>
+      </span>
+
+      <span class="connecting" *ngIf="!tile.connected">conectando…</span>
+    </div>
   </div>
 
-  <div class="messages">
+  <ion-card class="fingerprints" *ngIf="showFingerprints">
+    <ion-card-header>
+      <ion-card-subtitle>impressões digitais</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <p class="warning">
+        Quem entrega as chaves é o servidor. Confirme estes códigos por outro
+        meio para ter certeza de que ninguém está no meio.
+      </p>
+      <div class="fingerprint">
+        <span class="who">{{ chat.myNick() }} (você)</span>
+        <code>{{ chat.formatFingerprint(chat.myFingerprint()) }}</code>
+      </div>
+      <div class="fingerprint" *ngFor="let peer of chat.participants(); trackBy: trackByPeer">
+        <span class="who">{{ peer.nick }}</span>
+        <code>{{ chat.formatFingerprint(peer.fingerprint) }}</code>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
+
+<!-- Gaveta de texto: fica fora do caminho até ser chamada. -->
+<aside class="chat-drawer" [class.open]="chatOpen">
+  <header>
+    <span>Conversa</span>
+    <ion-button fill="clear" size="small" (click)="toggleChat()" title="Fechar conversa">
+      <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+    </ion-button>
+  </header>
+
+  <div class="messages" #messageList>
+    <p class="empty" *ngIf="chat.messages().length === 0">
+      Nada por aqui ainda.
+    </p>
+
     <div class="message" *ngFor="let message of chat.messages()" [class]="message.kind">
       <ng-container *ngIf="message.kind === 'system'; else bubble">
         <ion-note class="system">{{ message.text }}</ion-note>
@@ -151,10 +164,8 @@
       </ng-template>
     </div>
   </div>
-</ion-content>
 
-<ion-footer class="ion-no-border" *ngIf="chat.status() !== 'idle'">
-  <ion-toolbar>
+  <footer>
     <ion-input
       class="composer"
       fill="outline"
@@ -165,15 +176,24 @@
       [(ngModel)]="draft"
       (keyup.enter)="send()"
     ></ion-input>
-    <ion-buttons slot="end">
-      <ion-button
-        fill="solid"
-        color="primary"
-        [disabled]="!chat.canSend() || !draft.trim()"
-        (click)="send()"
-      >
-        <ion-icon slot="icon-only" name="send-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-footer>
+    <ion-button
+      fill="solid"
+      color="primary"
+      [disabled]="!chat.canSend() || !draft.trim()"
+      (click)="send()"
+    >
+      <ion-icon slot="icon-only" name="send-outline"></ion-icon>
+    </ion-button>
+  </footer>
+</aside>
+
+<button
+  class="chat-toggle"
+  type="button"
+  [class.shifted]="chatOpen"
+  (click)="toggleChat()"
+  [title]="chatOpen ? 'Fechar conversa' : 'Abrir conversa'"
+>
+  <ion-icon [name]="chatOpen ? 'close-outline' : 'chatbubble-ellipses'"></ion-icon>
+  <span class="badge" *ngIf="unread > 0">{{ unread }}</span>
+</button>

@@ -1,6 +1,6 @@
-import { Component, ViewChild, effect, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, IonContent, ToastController } from '@ionic/angular';
+import { AlertController, ToastController } from '@ionic/angular';
 
 import { ChatService, Participant } from '../core/services/chat.service';
 import { SoundService } from '../core/services/sound.service';
@@ -18,12 +18,16 @@ export class ChatPage {
   readonly chat = inject(ChatService);
   readonly sound = inject(SoundService);
 
-  @ViewChild(IonContent) private content?: IonContent;
+  @ViewChild('messageList') private messageList?: ElementRef<HTMLElement>;
 
   draft = '';
   showFingerprints = false;
   cameraBusy = false;
   micBusy = false;
+  chatOpen = false;
+  unread = 0;
+
+  private lastSeenCount = 0;
   private warnedAboutAudio = false;
 
   constructor() {
@@ -34,9 +38,16 @@ export class ChatPage {
       }
     });
 
+    // Com a gaveta fechada, mensagens novas viram contador em vez de sumirem.
     effect(() => {
-      this.chat.messages();
-      queueMicrotask(() => this.scrollToBottom());
+      const total = this.chat.messages().filter((m) => m.kind !== 'system').length;
+      if (this.chatOpen) {
+        this.lastSeenCount = total;
+        this.unread = 0;
+        queueMicrotask(() => this.scrollToBottom());
+        return;
+      }
+      this.unread = Math.max(0, total - this.lastSeenCount);
     });
   }
 
@@ -50,7 +61,6 @@ export class ChatPage {
       case 'connecting':
         return 'negociando conexão direta…';
       case 'connected':
-        // Com cinco botões na barra, sobra pouca largura para o subtítulo.
         return connected === 1 ? 'conectado ponta a ponta' : `${connected} conectados`;
       case 'ended':
         return 'conversa encerrada';
@@ -69,12 +79,20 @@ export class ChatPage {
     return `${origin}${pathname}#/entrar/${id}`;
   }
 
-  get micLabel(): string {
-    const nicks = this.chat.remoteMicList().map((entry) => entry.nick);
-    if (nicks.length === 1) {
-      return `${nicks[0]} está com o microfone aberto`;
+  /** Iniciais para o quadro de quem está sem câmera. */
+  initials(nick: string): string {
+    const parts = nick.trim().split(/\s+/).filter(Boolean);
+    const letters = parts.length > 1 ? parts[0][0] + parts[1][0] : nick.slice(0, 2);
+    return letters.toLocaleUpperCase();
+  }
+
+  toggleChat(): void {
+    this.chatOpen = !this.chatOpen;
+    if (this.chatOpen) {
+      this.lastSeenCount = this.chat.messages().filter((m) => m.kind !== 'system').length;
+      this.unread = 0;
+      queueMicrotask(() => this.scrollToBottom());
     }
-    return `${nicks.length} pessoas com o microfone aberto`;
   }
 
   async send(): Promise<void> {
@@ -85,6 +103,7 @@ export class ChatPage {
     this.draft = '';
     try {
       await this.chat.send(text);
+      queueMicrotask(() => this.scrollToBottom());
     } catch {
       this.draft = text;
       await this.toast('Não foi possível enviar. O canal caiu?', 'danger');
@@ -173,7 +192,10 @@ export class ChatPage {
   }
 
   private scrollToBottom(): void {
-    void this.content?.scrollToBottom(200);
+    const element = this.messageList?.nativeElement;
+    if (element) {
+      element.scrollTop = element.scrollHeight;
+    }
   }
 
   private async toast(message: string, color: string): Promise<void> {

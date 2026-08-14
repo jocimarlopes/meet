@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 
 import {
   PeerView,
@@ -11,6 +11,7 @@ import { MediaKind } from './peer-link';
 import { Identity, PeerIdentity, PgpService } from './pgp.service';
 import { SignalingService } from './signaling.service';
 import { SoundService } from './sound.service';
+import { VoiceActivityService } from './voice-activity.service';
 
 export type SessionStatus =
   | 'idle'
@@ -37,6 +38,17 @@ export interface Participant {
   connected: boolean;
 }
 
+/** Um quadro do palco: uma pessoa, com ou sem câmera. */
+export interface Tile {
+  nick: string;
+  isSelf: boolean;
+  /** Null quando a câmera está desligada — aí a tela mostra as iniciais. */
+  camera: MediaStream | null;
+  micOn: boolean;
+  speaking: boolean;
+  connected: boolean;
+}
+
 const MAX_RECONNECT_ATTEMPTS = 3;
 const RECONNECT_DELAY_MS = 1_500;
 
@@ -55,6 +67,7 @@ export class ChatService {
   private readonly signaling = inject(SignalingService);
   private readonly mesh = inject(MeshService);
   private readonly sound = inject(SoundService);
+  private readonly voice = inject(VoiceActivityService);
 
   readonly status = signal<SessionStatus>('idle');
   readonly room = signal<RoomView | null>(null);
@@ -87,6 +100,42 @@ export class ChatService {
   readonly anyVideo = computed(
     () => this.localCamera() !== null || this.remoteCameraList().length > 0,
   );
+
+  /**
+   * O palco: você e todos os participantes, com câmera ou sem. Quem está sem
+   * câmera continua ocupando um quadro — a sala precisa mostrar quem está lá.
+   */
+  readonly tiles = computed<Tile[]>(() => {
+    const speaking = this.voice.speaking();
+    const cameras = this.remoteCameras();
+    const mics = this.remoteMics();
+    const me = this.myNick();
+
+    const self: Tile[] = me
+      ? [
+          {
+            nick: me,
+            isSelf: true,
+            camera: this.localCamera(),
+            micOn: this.micOn(),
+            speaking: speaking[me] ?? false,
+            connected: true,
+          },
+        ]
+      : [];
+
+    return [
+      ...self,
+      ...this.participants().map((peer) => ({
+        nick: peer.nick,
+        isSelf: false,
+        camera: cameras[peer.nick] ?? null,
+        micOn: peer.nick in mics,
+        speaking: speaking[peer.nick] ?? false,
+        connected: peer.connected,
+      })),
+    ];
+  });
 
   private identity: Identity | null = null;
   private readonly peers = new Map<string, PeerIdentity>();
@@ -130,6 +179,18 @@ export class ChatService {
 
     this.mesh.remoteMediaAnnouncements.subscribe(({ nick, kind, active }) => {
       this.announceMedia(nick, kind, active);
+    });
+
+    // Mantém um medidor de nível por microfone aberto — o seu inclusive, para
+    // você ver que está sendo captado.
+    effect(() => {
+      const streams: Record<string, MediaStream> = { ...this.remoteMics() };
+      const me = this.myNick();
+      const mine = this.mesh.localMic();
+      if (me && mine) {
+        streams[me] = mine;
+      }
+      this.voice.sync(streams);
     });
   }
 
@@ -430,6 +491,7 @@ export class ChatService {
   }
 
   private reset(): void {
+    this.voice.clear();
     this.identity = null;
     this.peers.clear();
     this.reconnectAttempts = 0;
