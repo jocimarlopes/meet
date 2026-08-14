@@ -37,6 +37,15 @@ export class HomePage {
     return this.nickIsValid && this.inviteCode.trim().length > 0 && !this.busy;
   }
 
+  /** O botão é um só: cria a sala ou entra, conforme veio ou não por link. */
+  get canSubmit(): boolean {
+    return this.invited ? this.canJoin : this.canCreate;
+  }
+
+  async submit(): Promise<void> {
+    await (this.invited ? this.joinRoom() : this.createRoom());
+  }
+
   ionViewWillEnter(): void {
     // Uma sessão anterior pode ter ficado pendurada ao voltar para cá.
     this.chat.leave();

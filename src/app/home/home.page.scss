@@ -1,63 +1,140 @@
-ion-content {
-  --padding-bottom: 32px;
+/* Mesma paleta do palco da conversa, para as duas telas parecerem uma coisa só. */
+.welcome {
+  --background: #0d0f12;
+  --color: #e7ebf0;
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 32px;
+  --padding-bottom: 40px;
 }
 
-.intro {
-  margin: 0 8px 20px;
-  color: var(--ion-color-medium);
-  font-size: 0.9rem;
-  line-height: 1.5;
+.shell {
+  max-width: 420px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-ion-card {
-  margin-inline: 0;
-}
-
-ion-card-subtitle {
-  letter-spacing: 0.04em;
-  text-transform: lowercase;
-}
-
-.hint {
-  display: block;
-  margin-top: 8px;
-  font-size: 0.78rem;
-}
-
-.invited {
-  ion-card-content {
-    text-align: center;
-    padding: 24px 20px 20px;
-  }
+.brand {
+  text-align: center;
+  padding: 8px 4px 2px;
 
   ion-icon {
-    font-size: 2rem;
+    font-size: 2.1rem;
+    color: var(--ion-color-primary);
   }
 
-  h2 {
-    font-size: 1.05rem;
-    margin: 10px 0 6px;
-    color: var(--ion-text-color);
+  h1 {
+    margin: 10px 0 8px;
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #f2f5f8;
   }
 
   p {
     margin: 0;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: var(--ion-color-medium);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: #98a2ad;
   }
 }
 
-.explain {
-  margin: 0 0 16px;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: var(--ion-color-medium);
+.card {
+  padding: 20px;
+  border-radius: 14px;
+  background: #16191d;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #8b95a1;
+  }
+
+  ion-input {
+    --background: #0f1215;
+    --color: #e7ebf0;
+    --placeholder-color: #6a747f;
+    --border-color: rgba(255, 255, 255, 0.14);
+    --highlight-color-focused: var(--ion-color-primary);
+    --padding-start: 14px;
+    --padding-end: 14px;
+  }
+
+  .hint {
+    display: block;
+    margin: 8px 2px 16px;
+    font-size: 0.76rem;
+  }
+
+  ion-button {
+    --border-radius: 10px;
+    height: 46px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .explain {
+    margin: 14px 2px 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #7d8792;
+  }
 }
 
-.footnote {
-  display: block;
-  margin: 24px 8px 0;
-  font-size: 0.78rem;
-  line-height: 1.5;
+/* Chegou por link: o convite é o assunto principal da tela. */
+.invited {
+  text-align: center;
+  border-color: rgba(var(--ion-color-primary-rgb), 0.45);
+  background: linear-gradient(180deg, rgba(var(--ion-color-primary-rgb), 0.12), #16191d 70%);
+
+  ion-icon {
+    font-size: 1.7rem;
+    color: var(--ion-color-primary);
+  }
+
+  h2 {
+    margin: 8px 0 6px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #f2f5f8;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: #98a2ad;
+  }
+}
+
+.facts {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.79rem;
+    line-height: 1.5;
+    color: #7d8792;
+  }
+
+  ion-icon {
+    flex: none;
+    margin-top: 2px;
+    font-size: 0.95rem;
+    color: #5e6873;
+  }
 }

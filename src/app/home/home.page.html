@@ -1,104 +1,60 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-title>chat p2p</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="welcome" scrollY="true">
+  <div class="shell">
+    <header class="brand">
+      <ion-icon name="lock-closed"></ion-icon>
+      <h1>chat p2p</h1>
+      <p>
+        Conversa direta entre navegadores, cifrada ponta a ponta. O servidor só
+        apresenta quem está na sala — depois disso ele sai do caminho.
+      </p>
+    </header>
 
-<ion-content class="ion-padding">
-  <ion-card class="invited" *ngIf="invited">
-    <ion-card-content>
-      <ion-icon name="mail-open-outline" color="primary"></ion-icon>
-      <h2>Você foi convidado para uma conversa</h2>
-      <p>Escolha um apelido e entre. Ele precisa ser diferente dos que já estão na sala.</p>
-    </ion-card-content>
-  </ion-card>
+    <section class="card invited" *ngIf="invited">
+      <ion-icon name="mail-open-outline"></ion-icon>
+      <h2>Você foi convidado</h2>
+      <p>Escolha um apelido e entre. Ele precisa ser diferente dos que já estão lá.</p>
+    </section>
 
-  <p class="intro" *ngIf="!invited">
-    Conversa direta entre navegadores, cifrada com PGP. O servidor só apresenta
-    quem está na sala — depois disso ele sai do caminho.
-  </p>
-
-  <ion-card>
-    <ion-card-header>
-      <ion-card-subtitle>{{ invited ? 'seu apelido' : '1. seu apelido' }}</ion-card-subtitle>
-    </ion-card-header>
-    <ion-card-content>
+    <section class="card">
+      <label for="nick">Seu apelido</label>
       <ion-input
-        label="Apelido"
-        labelPlacement="stacked"
+        id="nick"
         fill="outline"
         maxlength="24"
         autocomplete="off"
         placeholder="como você aparece na sala"
         [(ngModel)]="nick"
-        (keyup.enter)="invited && joinRoom()"
+        (keyup.enter)="submit()"
       ></ion-input>
+
       <ion-note class="hint" [color]="nick && !nickIsValid ? 'danger' : 'medium'">
-        2 a 24 caracteres. Precisa ser diferente do apelido de quem já está na sala.
+        2 a 24 caracteres.
       </ion-note>
 
-      <ion-button
-        *ngIf="invited"
-        expand="block"
-        class="ion-margin-top"
-        [disabled]="!canJoin"
-        (click)="joinRoom()"
-      >
-        <ion-icon name="enter-outline" slot="start"></ion-icon>
-        Entrar na conversa
+      <ion-button expand="block" [disabled]="!canSubmit" (click)="submit()">
+        <ion-spinner *ngIf="busy" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!busy" [name]="invited ? 'enter-outline' : 'add-circle-outline'" slot="start"></ion-icon>
+        {{ invited ? 'Entrar na conversa' : 'Criar convite' }}
       </ion-button>
-    </ion-card-content>
-  </ion-card>
 
-  <ion-card *ngIf="!invited">
-    <ion-card-header>
-      <ion-card-subtitle>2a. criar um convite</ion-card-subtitle>
-    </ion-card-header>
-    <ion-card-content>
-      <p class="explain">
-        Você recebe um código para mandar a quem quiser conversar. A sala existe
-        só enquanto esta aba estiver aberta.
+      <p class="explain" *ngIf="!invited">
+        Você recebe um link para mandar a quem quiser conversar. Cabem 5 pessoas.
       </p>
-      <ion-button expand="block" [disabled]="!canCreate" (click)="createRoom()">
-        <ion-icon name="add-circle-outline" slot="start"></ion-icon>
-        Criar convite
-      </ion-button>
-    </ion-card-content>
-  </ion-card>
+    </section>
 
-  <ion-card *ngIf="!invited">
-    <ion-card-header>
-      <ion-card-subtitle>2b. entrar com um convite</ion-card-subtitle>
-    </ion-card-header>
-    <ion-card-content>
-      <ion-input
-        label="Código do convite"
-        labelPlacement="stacked"
-        fill="outline"
-        maxlength="64"
-        autocomplete="off"
-        autocapitalize="off"
-        spellcheck="false"
-        placeholder="cole aqui o código que te enviaram"
-        [(ngModel)]="inviteCode"
-        (keyup.enter)="joinRoom()"
-      ></ion-input>
-      <ion-button
-        expand="block"
-        fill="outline"
-        class="ion-margin-top"
-        [disabled]="!canJoin"
-        (click)="joinRoom()"
-      >
-        <ion-icon name="enter-outline" slot="start"></ion-icon>
-        Entrar na conversa
-      </ion-button>
-    </ion-card-content>
-  </ion-card>
-
-  <ion-note class="footnote" color="medium">
-    Salas não aparecem em lista nenhuma: só entra quem tem o código. As chaves
-    são geradas nesta aba e nunca saem dela — só a parte pública é trocada.
-    Fechou a aba, sumiu tudo.
-  </ion-note>
+    <ul class="facts">
+      <li>
+        <ion-icon name="key-outline"></ion-icon>
+        As chaves nascem nesta aba e nunca saem dela — só a parte pública é trocada.
+      </li>
+      <li>
+        <ion-icon name="eye-off-outline"></ion-icon>
+        Salas não aparecem em lista nenhuma: só entra quem tem o link.
+      </li>
+      <li>
+        <ion-icon name="trash-outline"></ion-icon>
+        Nada é guardado. Fechou a aba, sumiu tudo.
+      </li>
+    </ul>
+  </div>
 </ion-content>

@@ -31,11 +31,15 @@ export class ChatPage {
   private warnedAboutAudio = false;
 
   constructor() {
-    // Sessão encerrada (saída, erro do servidor, F5): volta para o lobby.
+    // Sessão encerrada (saída, erro do servidor, F5). Se veio de um convite e
+    // a entrada falhou, volta para ele: assim dá para corrigir o apelido sem
+    // precisar do link outra vez.
     effect(() => {
-      if (this.chat.status() === 'idle') {
-        void this.router.navigate(['/home']);
+      if (this.chat.status() !== 'idle') {
+        return;
       }
+      const invite = this.chat.pendingInvite();
+      void this.router.navigate(invite ? ['/entrar', invite] : ['/home']);
     });
 
     // Com a gaveta fechada, mensagens novas viram contador em vez de sumirem.

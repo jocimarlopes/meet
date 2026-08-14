@@ -75,6 +75,13 @@ export class ChatService {
   readonly messages = signal<ChatMessage[]>([]);
   readonly error = signal<string | null>(null);
 
+  /**
+   * Convite pelo qual se tentou entrar. Sobrevive ao erro de entrada para a
+   * pessoa poder corrigir o apelido sem precisar do link de novo — o tombo
+   * mais provável é justamente o apelido repetido.
+   */
+  readonly pendingInvite = signal<string | null>(null);
+
   readonly myNick = signal<string | null>(null);
   readonly myFingerprint = signal<string | null>(null);
   readonly participants = signal<Participant[]>([]);
@@ -210,6 +217,7 @@ export class ChatService {
 
   async joinRoom(roomId: string, nick: string): Promise<void> {
     await this.prepare(nick);
+    this.pendingInvite.set(roomId);
     this.role.set('guest');
     await this.signaling.connect();
     this.signaling.send({
@@ -253,6 +261,8 @@ export class ChatService {
   }
 
   leave(): void {
+    // Saída deliberada: o convite deixa de valer.
+    this.pendingInvite.set(null);
     this.closingOnPurpose = true;
     if (this.signaling.isOpen) {
       this.signaling.send({ type: 'leave' });
