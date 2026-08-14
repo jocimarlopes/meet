@@ -146,6 +146,11 @@ criptografia ponta a ponta, incluindo os famosos.
 hospedagem poderia servir uma versão adulterada. Aplicativos nativos mitigam
 isso com binário assinado; um site não tem como.
 
+**O site tem Google Analytics.** Acessos e navegação são medidos, o que
+significa que o Google vê o IP de quem entra. Isso não alcança as conversas:
+mensagens, áudio e vídeo continuam cifrados e trafegando por conexão direta.
+Mas se você não quer nem esse rastro, use uma janela anônima ou um bloqueador.
+
 ## O que dá para fazer
 
 | | |
