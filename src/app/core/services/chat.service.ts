@@ -240,14 +240,20 @@ export class ChatService {
 
   // -- ações do usuário ----------------------------------------------------
 
-  async createRoom(nick: string, visibility: Visibility = 'private'): Promise<void> {
+  async createRoom(
+    nick: string,
+    visibility: Visibility = 'private',
+    name = '',
+  ): Promise<void> {
     await this.prepare(nick);
     this.visibility = visibility;
     this.role.set('host');
     await this.signaling.connect();
     this.signaling.send({
       type: 'create_room',
-      name: `Sala de ${nick}`,
+      // Sala sem assunto declarado leva o nome de quem abriu: o servidor exige
+      // um nome, e numa sala privada ele já basta.
+      name: name.trim() || `Sala de ${nick}`,
       nick,
       visibility,
       public_key: this.identity!.publicKeyArmored,

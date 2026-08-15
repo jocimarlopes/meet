@@ -85,8 +85,14 @@ limitação de código: é o preço de não ter servidor no meio.
 
 Na criação você escolhe. **Privada** é o padrão: ela não aparece em lugar nenhum
 e só é alcançável por quem receber o link. **Pública** entra numa lista na
-própria home, com o número de vagas, e qualquer pessoa pode entrar escolhendo um
-apelido. Sala cheia sai da lista e volta quando alguém libera lugar.
+própria home e qualquer pessoa pode entrar escolhendo um apelido. Sala cheia sai
+da lista e volta quando alguém libera lugar.
+
+Ao abrir uma pública você dá um **assunto** a ela — "Angular e Ionic", "dúvidas
+de concurso", o que for. É o que aparece na lista, junto de quem hospeda e do
+número de vagas, e é a única informação que alguém tem antes de entrar. Sala
+privada não pede assunto: ela leva o nome de quem abriu, porque ninguém de fora
+a lê.
 
 ### Toda sala dura 30 minutos
 
@@ -181,7 +187,7 @@ Mas se você não quer nem esse rastro, use uma janela anônima ou um bloqueador
 | | |
 |---|---|
 | **Sala por link** | Cria, copia o link, manda. Quem abre só escolhe um apelido |
-| **Pública ou privada** | Privada só pelo link; pública aparece na lista da home |
+| **Pública ou privada** | Privada só pelo link; pública aparece na lista da home com assunto |
 | **Até 10 pessoas** | Malha direta, sem servidor de mídia |
 | **Prazo de 30 min** | Com tempo de conversa e restante à vista |
 | **Texto cifrado** | PGP ponta a ponta, com assinatura verificada por mensagem |
@@ -224,7 +230,7 @@ projeto.
 npx ng test --watch=false
 ```
 
-São 22 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
+São 24 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
 identidades geradas de verdade, mensagem cifrada para ambas, assinatura
 conferida e a garantia de que quem está fora da lista de destinatários não
 abre nada.
@@ -233,7 +239,7 @@ O projeto também é coberto por testes que sobem navegadores de verdade e
 verificam o que teste unitário não alcança — o handshake WebRTC com dois e com
 três participantes, a renegociação da câmera pelo canal direto e,
 principalmente, **o que sai no fio: só bloco PGP, sem o texto puro em lugar
-nenhum**. São 72 verificações somadas.
+nenhum**. São 76 verificações somadas.
 
 ## Limitações conhecidas
 

@@ -2,9 +2,10 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 
+import { ChatService } from '../core/services/chat.service';
 import { HomePage } from './home.page';
 
 describe('HomePage', () => {
@@ -56,6 +57,38 @@ describe('HomePage', () => {
 
   it('a sala nasce privada', () => {
     expect(component.visibility).toEqual('private');
+  });
+
+  it('o assunto da sala é opcional e limitado a 48 caracteres', () => {
+    component.nick = 'ana';
+
+    component.roomName = '';
+    expect(component.canCreate).withContext('em branco vale').toBeTrue();
+
+    component.roomName = 'Angular e Ionic';
+    expect(component.canCreate).toBeTrue();
+
+    component.roomName = 'x'.repeat(49);
+    expect(component.roomNameIsValid).toBeFalse();
+    expect(component.canCreate).withContext('o backend recusaria').toBeFalse();
+  });
+
+  it('o assunto só vai junto quando a sala é pública', async () => {
+    const chat = TestBed.inject(ChatService);
+    const createRoom = spyOn(chat, 'createRoom').and.resolveTo();
+    spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+
+    component.nick = 'ana';
+    component.roomName = 'Angular e Ionic';
+
+    await component.createRoom();
+    expect(createRoom)
+      .withContext('privada não mostra o assunto a ninguém')
+      .toHaveBeenCalledWith('ana', 'private', '');
+
+    component.visibility = 'public';
+    await component.createRoom();
+    expect(createRoom).toHaveBeenCalledWith('ana', 'public', 'Angular e Ionic');
   });
 
   it('entrar exige apelido e código do convite', () => {

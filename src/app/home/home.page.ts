@@ -12,6 +12,8 @@ import { ThemeService } from '../core/services/theme.service';
 // Cada consulta é uma invocação de função. Numa aba esquecida aberta, 5 em 5
 // segundos consomem meio milhão de invocações por mês sozinhas.
 const REFRESH_INTERVAL_MS = 15_000;
+/** Mesmo teto do `RoomName` no backend — passar disso é rejeitado lá. */
+const ROOM_NAME_MAX = 48;
 
 @Component({
   selector: 'app-home',
@@ -30,6 +32,8 @@ export class HomePage implements OnDestroy {
 
   nick = '';
   inviteCode = '';
+  /** Assunto da sala. Só faz sentido na pública, que estranhos leem na lista. */
+  roomName = '';
   busy = false;
   visibility: Visibility = 'private';
   publicRooms: RoomView[] = [];
@@ -42,8 +46,13 @@ export class HomePage implements OnDestroy {
     return isValidNick(this.nick);
   }
 
+  /** Vazio vale: a sala herda o nome de quem abriu. */
+  get roomNameIsValid(): boolean {
+    return this.roomName.trim().length <= ROOM_NAME_MAX;
+  }
+
   get canCreate(): boolean {
-    return this.nickIsValid && !this.busy;
+    return this.nickIsValid && this.roomNameIsValid && !this.busy;
   }
 
   get canJoin(): boolean {
@@ -109,7 +118,12 @@ export class HomePage implements OnDestroy {
       return;
     }
     await this.enterSession(() =>
-      this.chat.createRoom(this.nick.trim(), this.visibility),
+      // O assunto é só da sala pública; na privada ninguém de fora o leria.
+      this.chat.createRoom(
+        this.nick.trim(),
+        this.visibility,
+        this.visibility === 'public' ? this.roomName : '',
+      ),
     );
   }
 

@@ -61,6 +61,24 @@
         </button>
       </div>
 
+      <ng-container *ngIf="!invited && visibility === 'public'">
+        <label for="room-name">Assunto da sala</label>
+        <ion-input
+          id="room-name"
+          fill="outline"
+          maxlength="48"
+          autocomplete="off"
+          placeholder="sobre o que é a conversa"
+          [(ngModel)]="roomName"
+          (keyup.enter)="submit()"
+        ></ion-input>
+
+        <ion-note class="hint" [color]="roomNameIsValid ? 'medium' : 'danger'">
+          Aparece na lista para quem não conhece você. Em branco, vira
+          "Sala de {{ nick || 'seu apelido' }}".
+        </ion-note>
+      </ng-container>
+
       <ion-button expand="block" [disabled]="!canSubmit" (click)="submit()">
         <ion-spinner *ngIf="busy" name="dots" slot="start"></ion-spinner>
         <ion-icon *ngIf="!busy" [name]="invited ? 'enter-outline' : 'add-circle-outline'" slot="start"></ion-icon>
@@ -83,7 +101,11 @@
       >
         <span class="who">
           <strong>{{ room.name }}</strong>
-          <small>{{ room.occupants }} de {{ room.capacity }} · {{ vagas(room) }} vagas</small>
+          <small>
+            <!-- Com nome livre, o assunto não diz quem está do outro lado. -->
+            <ng-container *ngIf="room.host_nick">por {{ room.host_nick }} · </ng-container>
+            {{ room.occupants }} de {{ room.capacity }} · {{ vagas(room) }} vagas
+          </small>
         </span>
         <ion-icon name="chevron-forward-outline"></ion-icon>
       </button>
