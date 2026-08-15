@@ -90,12 +90,29 @@
       </p>
     </section>
 
-    <!-- Aparece mesmo vazia: sumir por completo faz a lista parecer quebrada
-         para quem está esperando a sala de alguém surgir. -->
-    <section class="card rooms" *ngIf="!invited && roomsLoaded">
-      <h2>Salas abertas agora</h2>
+    <!-- Aparece sempre, inclusive vazia ou com erro: sumir por completo não
+         deixa distinguir "nenhuma sala" de "isto quebrou". -->
+    <section class="card rooms" *ngIf="!invited">
+      <header class="rooms-head">
+        <h2>Salas abertas agora</h2>
+        <button
+          class="refresh"
+          type="button"
+          title="Atualizar a lista"
+          [disabled]="roomsLoading"
+          (click)="refreshRooms()"
+        >
+          <ion-spinner *ngIf="roomsLoading" name="dots"></ion-spinner>
+          <ion-icon *ngIf="!roomsLoading" name="refresh-outline"></ion-icon>
+        </button>
+      </header>
 
-      <p class="empty" *ngIf="publicRooms.length === 0">
+      <p class="empty" *ngIf="roomsError">
+        Não deu para consultar as salas agora. Toque em atualizar para tentar de
+        novo — criar e entrar por link continua funcionando.
+      </p>
+
+      <p class="empty" *ngIf="!roomsError && publicRooms.length === 0">
         Nenhuma sala pública aberta neste momento. Crie a sua marcando
         <strong>Pública</strong> — ela aparece aqui para todo mundo.
       </p>

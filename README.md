@@ -94,6 +94,11 @@ número de vagas, e é a única informação que alguém tem antes de entrar. Sa
 privada não pede assunto: ela leva o nome de quem abriu, porque ninguém de fora
 a lê.
 
+A lista fica sempre visível, mesmo vazia — some da tela é o que faz parecer
+quebrada. Ela não se atualiza sozinha em intervalo fixo: carrega ao abrir a
+home, quando você volta para a aba e quando clica em atualizar. Uma página
+esquecida aberta não consome nada.
+
 ### Toda sala dura 30 minutos
 
 Contados da criação. A tela mostra o tempo de conversa e o quanto ainda resta,
@@ -230,7 +235,7 @@ projeto.
 npx ng test --watch=false
 ```
 
-São 24 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
+São 26 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
 identidades geradas de verdade, mensagem cifrada para ambas, assinatura
 conferida e a garantia de que quem está fora da lista de destinatários não
 abre nada.
@@ -239,7 +244,7 @@ O projeto também é coberto por testes que sobem navegadores de verdade e
 verificam o que teste unitário não alcança — o handshake WebRTC com dois e com
 três participantes, a renegociação da câmera pelo canal direto e,
 principalmente, **o que sai no fio: só bloco PGP, sem o texto puro em lugar
-nenhum**. São 78 verificações somadas.
+nenhum**. São 81 verificações somadas.
 
 ## Limitações conhecidas
 

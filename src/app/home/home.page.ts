@@ -1,16 +1,7 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
-import {
-  Subscription,
-  filter,
-  fromEvent,
-  interval,
-  merge,
-  startWith,
-  switchMap,
-  throttleTime,
-} from 'rxjs';
+import { Subscription, filter, fromEvent, merge, throttleTime } from 'rxjs';
 
 import { RoomView, Visibility, isValidNick } from '../core/models/signaling.models';
 import { ChatService } from '../core/services/chat.service';
@@ -18,10 +9,10 @@ import { RoomsService } from '../core/services/rooms.service';
 import { SoundService } from '../core/services/sound.service';
 import { ThemeService } from '../core/services/theme.service';
 
-// Cada consulta é uma invocação de função, mas quem está olhando a vitrine está
-// esperando alguém abrir uma sala: espaçar demais faz a lista parecer quebrada.
-// O que economiza de verdade é não consultar com a aba escondida, logo abaixo.
-const REFRESH_INTERVAL_MS = 5_000;
+// A vitrine não fica se atualizando sozinha: cada consulta é uma invocação de
+// função, e uma página aberta e esquecida gastaria o mês inteiro à toa. Ela
+// carrega ao abrir a home, quando a aba volta ao primeiro plano, e no botão de
+// atualizar — três momentos em que existe alguém de fato olhando.
 /** Evita consulta dupla quando `focus` e `visibilitychange` chegam juntos. */
 const COALESCE_MS = 1_000;
 /** Mesmo teto do `RoomName` no backend — passar disso é rejeitado lá. */
@@ -49,12 +40,14 @@ export class HomePage implements OnDestroy {
   busy = false;
   visibility: Visibility = 'private';
   publicRooms: RoomView[] = [];
-  /** A vitrine só se mostra depois da primeira resposta, cheia ou vazia. */
-  roomsLoaded = false;
+  roomsLoading = false;
+  /** Sem servidor a vitrine explica o silêncio, em vez de fingir sala nenhuma. */
+  roomsError = false;
   /** Chegou por link de convite: só falta o apelido. */
   invited = false;
 
-  private polling?: Subscription;
+  private wake?: Subscription;
+  private listing?: Subscription;
 
   get nickIsValid(): boolean {
     return isValidNick(this.nick);
@@ -93,49 +86,63 @@ export class HomePage implements OnDestroy {
       this.invited = true;
       return;
     }
-    this.startPolling();
+    this.watchForeground();
+    this.refreshRooms();
   }
 
   ionViewWillLeave(): void {
-    this.stopPolling();
+    this.stopWatching();
   }
 
   ngOnDestroy(): void {
-    this.stopPolling();
+    this.stopWatching();
   }
 
-  private startPolling(): void {
-    this.stopPolling();
-    this.polling = merge(
-      interval(REFRESH_INTERVAL_MS),
-      // Voltar para esta aba ou para esta janela atualiza na hora. Sem isso,
-      // quem alterna entre janelas encara a lista velha até o próximo ciclo —
-      // e conclui, com razão, que a sala do amigo nunca apareceu.
+  /** Botão de atualizar, e também o carregamento inicial da vitrine. */
+  refreshRooms(): void {
+    if (this.roomsLoading) {
+      return;
+    }
+    this.roomsLoading = true;
+    this.listing?.unsubscribe();
+    this.listing = this.rooms.listPublicRooms().subscribe({
+      next: (rooms) => {
+        this.publicRooms = rooms;
+        this.roomsError = false;
+        this.roomsLoading = false;
+      },
+      // Criar sala e entrar por link não dependem disto, então o erro fica na
+      // própria vitrine em vez de interromper a tela.
+      error: () => {
+        this.roomsError = true;
+        this.roomsLoading = false;
+      },
+    });
+  }
+
+  /**
+   * Voltar para esta aba ou para esta janela recarrega a lista. É o gesto de
+   * quem alterna entre dois navegadores para testar, e não custa nada enquanto
+   * ninguém está olhando.
+   */
+  private watchForeground(): void {
+    this.stopWatching();
+    this.wake = merge(
       fromEvent(document, 'visibilitychange'),
       fromEvent(window, 'focus'),
     )
       .pipe(
-        startWith(0),
         throttleTime(COALESCE_MS),
-        // Aba escondida não precisa de lista atualizada, e quem esquece a
-        // página aberta não deveria custar nada.
         filter(() => !document.hidden),
-        switchMap(() => this.rooms.listPublicRooms()),
       )
-      .subscribe({
-        next: (rooms) => {
-          this.publicRooms = rooms;
-          this.roomsLoaded = true;
-        },
-        // Sem servidor a vitrine só fica vazia; criar sala por link continua
-        // valendo, então não vale interromper a tela com erro.
-        error: () => setTimeout(() => this.startPolling(), REFRESH_INTERVAL_MS),
-      });
+      .subscribe(() => this.refreshRooms());
   }
 
-  private stopPolling(): void {
-    this.polling?.unsubscribe();
-    this.polling = undefined;
+  private stopWatching(): void {
+    this.wake?.unsubscribe();
+    this.wake = undefined;
+    this.listing?.unsubscribe();
+    this.listing = undefined;
   }
 
   async createRoom(): Promise<void> {
