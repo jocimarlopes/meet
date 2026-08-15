@@ -30,7 +30,8 @@ um apelido e entra direto — sem cadastro, sem instalar nada, sem app.
 
 A partir daí os navegadores se conectam **diretamente**, por WebRTC. Texto,
 câmera e áudio trafegam de um para o outro sem tocar em nenhuma
-infraestrutura. O servidor participa só da apresentação inicial.
+infraestrutura. O servidor só apresenta as pessoas — nada do que vocês falam
+passa por ele.
 
 Não é um clone de Meet. É um exercício sobre uma pergunta específica: **quanto
 dá para tirar do servidor sem perder o produto?**
@@ -66,13 +67,35 @@ Nos passos 1 a 6 o servidor faz três coisas: guarda a sala, garante que dois
 participantes não usem o mesmo apelido e repassa os dados de conexão do WebRTC.
 Ele nunca vê conteúdo.
 
-Do passo 7 em diante, a conversa é direta.
+Do passo 7 em diante, a conversa é direta. A conexão com o servidor continua
+aberta, mas só para avisar quando alguém novo entra — é o que permite a sala
+crescer durante a conversa. Mensagens, áudio e vídeo não passam por lá.
 
 ### Sala em grupo é uma malha
 
-Até 5 pessoas por sala. Cada uma mantém uma conexão com cada outra — não existe
-servidor de mídia retransmitindo nada. É por isso que o teto é 5: o custo cresce
-ao quadrado, e com 5 participantes cada um já envia 4 fluxos de vídeo.
+Até 10 pessoas por sala. Cada uma mantém uma conexão com cada outra — não existe
+servidor de mídia retransmitindo nada, e é por isso que existe um teto: o custo
+cresce ao quadrado. Com 10 participantes, cada um envia 9 fluxos.
+
+Na prática isso significa que texto e áudio funcionam bem com a sala cheia, mas
+**vídeo de todos ao mesmo tempo só se sustenta em grupos menores**. Não é
+limitação de código: é o preço de não ter servidor no meio.
+
+### Sala pública ou privada
+
+Na criação você escolhe. **Privada** é o padrão: ela não aparece em lugar nenhum
+e só é alcançável por quem receber o link. **Pública** entra numa lista na
+própria home, com o número de vagas, e qualquer pessoa pode entrar escolhendo um
+apelido. Sala cheia sai da lista e volta quando alguém libera lugar.
+
+### Toda sala dura 30 minutos
+
+Contados da criação. A tela mostra o tempo de conversa e o quanto ainda resta,
+lado a lado — os dois somam o prazo. Nos últimos cinco minutos o aviso fica
+vermelho, e no fim a sala encerra avisando, em vez de morrer sem explicação.
+
+O limite existe porque nada é guardado: uma sala eterna seria só um recurso
+parado. Conversa mais longa é uma sala nova.
 
 ### Criptografia
 
@@ -86,9 +109,10 @@ o escudo verde no balão significa que confere.
 
 ### Câmera e áudio no meio da conversa
 
-Abrir a câmera depois que a conversa já começou é uma renegociação de WebRTC, e
-o canal com o servidor já foi fechado a essa altura. Em vez de reabri-lo, o novo
-SDP viaja **pelo próprio canal direto** — o servidor não volta a participar.
+Abrir a câmera depois que a conversa já começou é uma renegociação de WebRTC:
+seria natural mandar o novo SDP pelo servidor, como no início. Em vez disso ele
+viaja **pelo próprio canal direto entre os navegadores** — assim o servidor não
+volta a participar de nada depois da apresentação.
 
 A negociação usa *perfect negotiation*, então duas pessoas ligando a câmera ao
 mesmo tempo não derrubam a conexão.
@@ -115,8 +139,9 @@ me faria desconfiar de um projeto alheio.
   no WebRTC.
 - **Nada é guardado.** Não há banco de dados de mensagens. As chaves vivem na
   memória da aba: fechou, sumiu.
-- **Salas não são listáveis.** Não existe rota que enumere salas — só entra quem
-  tem o link.
+- **Sala privada não é listável.** Não existe rota que enumere as privadas — só
+  entra quem tem o link. As públicas aparecem por escolha explícita de quem
+  criou.
 
 ### O que não garante
 
@@ -156,7 +181,9 @@ Mas se você não quer nem esse rastro, use uma janela anônima ou um bloqueador
 | | |
 |---|---|
 | **Sala por link** | Cria, copia o link, manda. Quem abre só escolhe um apelido |
-| **Até 5 pessoas** | Malha direta, sem servidor de mídia |
+| **Pública ou privada** | Privada só pelo link; pública aparece na lista da home |
+| **Até 10 pessoas** | Malha direta, sem servidor de mídia |
+| **Prazo de 30 min** | Com tempo de conversa e restante à vista |
 | **Texto cifrado** | PGP ponta a ponta, com assinatura verificada por mensagem |
 | **Câmera e microfone** | Independentes — dá para falar sem aparecer |
 | **Quem está falando** | Borda no quadro, por detecção de nível de áudio |
@@ -197,22 +224,25 @@ projeto.
 npx ng test --watch=false
 ```
 
-São 21 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
+São 22 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
 identidades geradas de verdade, mensagem cifrada para ambas, assinatura
 conferida e a garantia de que quem está fora da lista de destinatários não
 abre nada.
 
 O projeto também é coberto por testes que sobem navegadores de verdade e
-verificam o que teste unitário não alcança — o handshake WebRTC, a
-renegociação da câmera pelo canal direto e, principalmente, **o que sai no fio:
-só bloco PGP, sem o texto puro em lugar nenhum**.
+verificam o que teste unitário não alcança — o handshake WebRTC com dois e com
+três participantes, a renegociação da câmera pelo canal direto e,
+principalmente, **o que sai no fio: só bloco PGP, sem o texto puro em lugar
+nenhum**. São 72 verificações somadas.
 
 ## Limitações conhecidas
 
 - **NAT simétrico.** Só há STUN configurado. Em algumas redes móveis e
   corporativas a conexão direta não fecha, e seria preciso um servidor TURN.
   Isso pesa mais no vídeo que no texto.
-- **Teto de 5 pessoas**, pela natureza da malha.
+- **Teto de 10 pessoas**, pela natureza da malha — e vídeo de todos ao mesmo
+  tempo pesa bem antes disso.
+- **A sala acaba em 30 minutos**, sem prorrogação.
 - **Sem histórico.** Fechou a aba, acabou. É de propósito.
 - **O WebSocket fica aberto durante a conversa** — não para trafegar mensagens,
   mas para avisar quando alguém novo entra.
