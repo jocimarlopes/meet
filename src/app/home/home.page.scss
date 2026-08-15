@@ -34,6 +34,38 @@
   gap: 18px;
 }
 
+.panels {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Tela larga: formulário e vitrine dividem a linha. Numa coluna estreita isso
+   espremeria os dois, então no celular seguem empilhados.
+   Só vale quando há vitrine — quem chega por convite não tem segundo card, e
+   metade da linha vazia ficaria torta. */
+@media (min-width: 768px) {
+  .shell.wide {
+    max-width: 900px;
+  }
+
+  .shell.wide .panels {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 20px;
+  }
+
+  .shell.wide .facts {
+    flex-direction: row;
+    gap: 24px;
+
+    li {
+      flex: 1;
+    }
+  }
+}
+
 .brand {
   text-align: center;
   padding: 8px 4px 2px;
@@ -264,6 +296,20 @@
     }
   }
 
+  /* A lista rola por dentro do card: muita sala não pode esticar a página nem
+     desalinhar as colunas do desktop. O teto é generoso o bastante para caber
+     umas cinco salas antes de começar a rolar. */
+  .room-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Respiro para a barra de rolagem não encostar nos cartões. */
+    padding-right: 4px;
+  }
+
   .room {
     width: 100%;
     display: flex;
@@ -271,16 +317,11 @@
     justify-content: space-between;
     gap: 12px;
     padding: 12px 14px;
-    margin-bottom: 8px;
     border-radius: 10px;
     border: 1px solid var(--app-border);
     background: var(--app-surface-sunken);
     color: var(--app-text);
     cursor: pointer;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
 
     .who {
       display: flex;

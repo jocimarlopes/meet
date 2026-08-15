@@ -8,7 +8,7 @@
 </button>
 
 <ion-content class="welcome" scrollY="true">
-  <div class="shell">
+  <div class="shell" [class.wide]="!invited">
     <header class="brand">
       <img class="logo" src="assets/logo.svg" alt="" width="52" height="52" />
       <h1>Meet P2P</h1>
@@ -24,117 +24,124 @@
       <p>Escolha um apelido e entre. Ele precisa ser diferente dos que já estão lá.</p>
     </section>
 
-    <section class="card">
-      <label for="nick">Seu apelido</label>
-      <ion-input
-        id="nick"
-        fill="outline"
-        maxlength="24"
-        autocomplete="off"
-        placeholder="como você aparece na sala"
-        [(ngModel)]="nick"
-        (keyup.enter)="submit()"
-      ></ion-input>
-
-      <ion-note class="hint" [color]="nick && !nickIsValid ? 'danger' : 'medium'">
-        2 a 24 caracteres.
-      </ion-note>
-
-      <div class="visibility" *ngIf="!invited">
-        <button
-          type="button"
-          [class.on]="visibility === 'private'"
-          (click)="visibility = 'private'"
-        >
-          <ion-icon name="lock-closed-outline"></ion-icon>
-          <strong>Privada</strong>
-          <small>só entra quem receber o link</small>
-        </button>
-        <button
-          type="button"
-          [class.on]="visibility === 'public'"
-          (click)="visibility = 'public'"
-        >
-          <ion-icon name="globe-outline"></ion-icon>
-          <strong>Pública</strong>
-          <small>aparece na lista abaixo</small>
-        </button>
-      </div>
-
-      <ng-container *ngIf="!invited && visibility === 'public'">
-        <label for="room-name">Assunto da sala</label>
+    <!-- No desktop os dois cards ficam lado a lado; no celular, empilhados. -->
+    <div class="panels">
+      <section class="card">
+        <label for="nick">Seu apelido</label>
         <ion-input
-          id="room-name"
+          id="nick"
           fill="outline"
-          maxlength="48"
+          maxlength="24"
           autocomplete="off"
-          placeholder="sobre o que é a conversa"
-          [(ngModel)]="roomName"
+          placeholder="como você aparece na sala"
+          [(ngModel)]="nick"
           (keyup.enter)="submit()"
         ></ion-input>
 
-        <ion-note class="hint" [color]="roomNameIsValid ? 'medium' : 'danger'">
-          Aparece na lista para quem não conhece você. Em branco, vira
-          "Sala de {{ nick || 'seu apelido' }}".
+        <ion-note class="hint" [color]="nick && !nickIsValid ? 'danger' : 'medium'">
+          2 a 24 caracteres.
         </ion-note>
-      </ng-container>
 
-      <ion-button expand="block" [disabled]="!canSubmit" (click)="submit()">
-        <ion-spinner *ngIf="busy" name="dots" slot="start"></ion-spinner>
-        <ion-icon *ngIf="!busy" [name]="invited ? 'enter-outline' : 'add-circle-outline'" slot="start"></ion-icon>
-        {{ invited ? 'Entrar na conversa' : 'Criar convite' }}
-      </ion-button>
+        <div class="visibility" *ngIf="!invited">
+          <button
+            type="button"
+            [class.on]="visibility === 'private'"
+            (click)="visibility = 'private'"
+          >
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            <strong>Privada</strong>
+            <small>só entra quem receber o link</small>
+          </button>
+          <button
+            type="button"
+            [class.on]="visibility === 'public'"
+            (click)="visibility = 'public'"
+          >
+            <ion-icon name="globe-outline"></ion-icon>
+            <strong>Pública</strong>
+            <small>aparece na lista de salas abertas</small>
+          </button>
+        </div>
 
-      <p class="explain" *ngIf="!invited">
-        Cabem 10 pessoas e a sala dura 30 minutos.
-      </p>
-    </section>
+        <ng-container *ngIf="!invited && visibility === 'public'">
+          <label for="room-name">Assunto da sala</label>
+          <ion-input
+            id="room-name"
+            fill="outline"
+            maxlength="48"
+            autocomplete="off"
+            placeholder="sobre o que é a conversa"
+            [(ngModel)]="roomName"
+            (keyup.enter)="submit()"
+          ></ion-input>
 
-    <!-- Aparece sempre, inclusive vazia ou com erro: sumir por completo não
-         deixa distinguir "nenhuma sala" de "isto quebrou". -->
-    <section class="card rooms" *ngIf="!invited">
-      <header class="rooms-head">
-        <h2>Salas abertas agora</h2>
-        <button
-          class="refresh"
-          type="button"
-          title="Atualizar a lista"
-          [disabled]="roomsLoading"
-          (click)="refreshRooms()"
-        >
-          <ion-spinner *ngIf="roomsLoading" name="dots"></ion-spinner>
-          <ion-icon *ngIf="!roomsLoading" name="refresh-outline"></ion-icon>
-        </button>
-      </header>
+          <ion-note class="hint" [color]="roomNameIsValid ? 'medium' : 'danger'">
+            Aparece na lista para quem não conhece você. Em branco, vira
+            "Sala de {{ nick || 'seu apelido' }}".
+          </ion-note>
+        </ng-container>
 
-      <p class="empty" *ngIf="roomsError">
-        Não deu para consultar as salas agora. Toque em atualizar para tentar de
-        novo — criar e entrar por link continua funcionando.
-      </p>
+        <ion-button expand="block" [disabled]="!canSubmit" (click)="submit()">
+          <ion-spinner *ngIf="busy" name="dots" slot="start"></ion-spinner>
+          <ion-icon *ngIf="!busy" [name]="invited ? 'enter-outline' : 'add-circle-outline'" slot="start"></ion-icon>
+          {{ invited ? 'Entrar na conversa' : 'Criar convite' }}
+        </ion-button>
 
-      <p class="empty" *ngIf="!roomsError && publicRooms.length === 0">
-        Nenhuma sala pública aberta neste momento. Crie a sua marcando
-        <strong>Pública</strong> — ela aparece aqui para todo mundo.
-      </p>
+        <p class="explain" *ngIf="!invited">
+          Cabem 10 pessoas e a sala dura 30 minutos.
+        </p>
+      </section>
 
-      <button
-        class="room"
-        type="button"
-        *ngFor="let room of publicRooms; trackBy: trackRoom"
-        [disabled]="busy"
-        (click)="joinPublic(room)"
-      >
-        <span class="who">
-          <strong>{{ room.name }}</strong>
-          <small>
-            <!-- Com nome livre, o assunto não diz quem está do outro lado. -->
-            <ng-container *ngIf="room.host_nick">por {{ room.host_nick }} · </ng-container>
-            {{ room.occupants }} de {{ room.capacity }} · {{ vagas(room) }} vagas
-          </small>
-        </span>
-        <ion-icon name="chevron-forward-outline"></ion-icon>
-      </button>
-    </section>
+      <!-- Aparece sempre, inclusive vazia ou com erro: sumir por completo não
+           deixa distinguir "nenhuma sala" de "isto quebrou". -->
+      <section class="card rooms" *ngIf="!invited">
+        <header class="rooms-head">
+          <h2>Salas abertas agora</h2>
+          <button
+            class="refresh"
+            type="button"
+            title="Atualizar a lista"
+            [disabled]="roomsLoading"
+            (click)="refreshRooms()"
+          >
+            <ion-spinner *ngIf="roomsLoading" name="dots"></ion-spinner>
+            <ion-icon *ngIf="!roomsLoading" name="refresh-outline"></ion-icon>
+          </button>
+        </header>
+
+        <p class="empty" *ngIf="roomsError">
+          Não deu para consultar as salas agora. Toque em atualizar para tentar de
+          novo — criar e entrar por link continua funcionando.
+        </p>
+
+        <p class="empty" *ngIf="!roomsError && publicRooms.length === 0">
+          Nenhuma sala pública aberta neste momento. Crie a sua marcando
+          <strong>Pública</strong> — ela aparece aqui para todo mundo.
+        </p>
+
+        <!-- Rola por dentro: com muita sala, a lista não pode empurrar o resto
+             da página nem desalinhar as duas colunas do desktop. -->
+        <div class="room-list" *ngIf="publicRooms.length > 0">
+          <button
+            class="room"
+            type="button"
+            *ngFor="let room of publicRooms; trackBy: trackRoom"
+            [disabled]="busy"
+            (click)="joinPublic(room)"
+          >
+            <span class="who">
+              <strong>{{ room.name }}</strong>
+              <small>
+                <!-- Com nome livre, o assunto não diz quem está do outro lado. -->
+                <ng-container *ngIf="room.host_nick">por {{ room.host_nick }} · </ng-container>
+                {{ room.occupants }} de {{ room.capacity }} · {{ vagas(room) }} vagas
+              </small>
+            </span>
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </button>
+        </div>
+      </section>
+    </div>
 
     <ul class="facts">
       <li>
