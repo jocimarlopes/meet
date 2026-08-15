@@ -25,6 +25,12 @@ type ChannelEnvelope =
   | { kind: 'rtc'; payload: SignalPayload };
 
 const CHANNEL_LABEL = 'chat';
+/**
+ * Janela de agrupamento dos candidatos ICE. Eles chegam em rajada logo após a
+ * oferta, e mandar um por mensagem fazia deles a maior fatia do tráfego de
+ * signaling. Curta o bastante para não atrasar o handshake de forma perceptível.
+ */
+const CANDIDATE_BATCH_MS = 200;
 
 /**
  * Uma conexão WebRTC com **um** participante.
@@ -47,6 +53,9 @@ export class PeerLink {
   private readonly senders = new Map<MediaKind, RTCRtpSender>();
   private readonly remoteStreams = new Map<MediaKind, MediaStream>();
   private queuedCandidates: RTCIceCandidateInit[] = [];
+  /** Candidatos locais esperando para sair em lote. */
+  private outgoingCandidates: RTCIceCandidateInit[] = [];
+  private batchTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly polite: boolean;
   private makingOffer = false;
@@ -64,7 +73,7 @@ export class PeerLink {
 
     this.connection.onicecandidate = ({ candidate }) => {
       if (candidate) {
-        this.emitSignal({ candidate: candidate.toJSON() });
+        this.queueOutgoingCandidate(candidate.toJSON());
       }
     };
 
@@ -145,18 +154,32 @@ export class PeerLink {
       return;
     }
 
-    if (payload.candidate) {
+    for (const candidate of payload.candidates ?? []) {
       if (!this.connection.remoteDescription) {
-        this.queuedCandidates.push(payload.candidate);
-        return;
+        this.queuedCandidates.push(candidate);
+        continue;
       }
       try {
-        await this.connection.addIceCandidate(payload.candidate);
+        await this.connection.addIceCandidate(candidate);
       } catch (cause) {
         if (!this.ignoreOffer) {
           throw cause;
         }
       }
+    }
+  }
+
+  private queueOutgoingCandidate(candidate: RTCIceCandidateInit): void {
+    this.outgoingCandidates.push(candidate);
+    this.batchTimer ??= setTimeout(() => this.flushOutgoing(), CANDIDATE_BATCH_MS);
+  }
+
+  private flushOutgoing(): void {
+    this.batchTimer = null;
+    const lote = this.outgoingCandidates;
+    this.outgoingCandidates = [];
+    if (lote.length > 0) {
+      this.emitSignal({ candidates: lote });
     }
   }
 
@@ -189,6 +212,11 @@ export class PeerLink {
   }
 
   close(): void {
+    if (this.batchTimer !== null) {
+      clearTimeout(this.batchTimer);
+      this.batchTimer = null;
+    }
+    this.outgoingCandidates = [];
     this.queuedCandidates = [];
     this.senders.clear();
     this.remoteStreams.clear();

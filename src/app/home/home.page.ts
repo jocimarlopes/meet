@@ -1,7 +1,7 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
-import { Subscription, interval, startWith, switchMap } from 'rxjs';
+import { Subscription, filter, interval, startWith, switchMap } from 'rxjs';
 
 import { RoomView, Visibility, isValidNick } from '../core/models/signaling.models';
 import { ChatService } from '../core/services/chat.service';
@@ -9,7 +9,9 @@ import { RoomsService } from '../core/services/rooms.service';
 import { SoundService } from '../core/services/sound.service';
 import { ThemeService } from '../core/services/theme.service';
 
-const REFRESH_INTERVAL_MS = 5_000;
+// Cada consulta é uma invocação de função. Numa aba esquecida aberta, 5 em 5
+// segundos consomem meio milhão de invocações por mês sozinhas.
+const REFRESH_INTERVAL_MS = 15_000;
 
 @Component({
   selector: 'app-home',
@@ -84,6 +86,9 @@ export class HomePage implements OnDestroy {
     this.polling = interval(REFRESH_INTERVAL_MS)
       .pipe(
         startWith(0),
+        // Aba escondida não precisa de lista atualizada, e quem esquece a
+        // página aberta não deveria custar nada.
+        filter(() => !document.hidden),
         switchMap(() => this.rooms.listPublicRooms()),
       )
       .subscribe({

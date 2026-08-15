@@ -26,7 +26,8 @@ export interface PeerView {
 /** SDP e ICE trafegam opacos pelo servidor. */
 export interface SignalPayload {
   description?: RTCSessionDescriptionInit;
-  candidate?: RTCIceCandidateInit;
+  /** Candidatos vão em lote: um por mensagem dominava o custo de signaling. */
+  candidates?: RTCIceCandidateInit[];
 }
 
 // -- cliente -> servidor -----------------------------------------------------
