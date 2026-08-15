@@ -228,6 +228,27 @@
   </footer>
 </aside>
 
+<!-- Imagem em tela cheia. Fica fora da gaveta do chat de propósito: a gaveta é
+     estreita e a foto merece a tela toda. -->
+<div class="preview" *ngIf="preview" (click)="closePreview()">
+  <div class="preview-bar" (click)="$event.stopPropagation()">
+    <span class="name">{{ preview.name }}</span>
+    <a
+      class="action"
+      title="Baixar imagem"
+      [href]="preview.url"
+      [download]="preview.name"
+    >
+      <ion-icon name="download-outline"></ion-icon>
+    </a>
+    <button class="action" type="button" title="Fechar" (click)="closePreview()">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+  </div>
+
+  <img [src]="preview.url" [alt]="preview.name" (click)="$event.stopPropagation()" />
+</div>
+
 <!-- Controles da chamada: perto do polegar, longe do menu de configuração. -->
 <div class="controls" [class.shifted]="chatOpen">
   <button

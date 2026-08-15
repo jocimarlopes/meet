@@ -49,7 +49,18 @@ export class ImageService {
       throw new Error('Imagem grande demais mesmo depois de reduzida.');
     }
 
-    return { mime, name: file.name || 'imagem', data };
+    return { mime, name: this.nomeCom(file.name || 'imagem', mime), data };
+  }
+
+  /**
+   * Ajusta a extensão ao formato real. Reduzir converte para JPEG, e um
+   * `foto.png` que na verdade é JPEG só incomoda quem for baixar depois.
+   */
+  private nomeCom(nome: string, mime: string): string {
+    if (mime !== 'image/jpeg' || /\.jpe?g$/i.test(nome)) {
+      return nome;
+    }
+    return `${nome.replace(/\.[^.]+$/, '')}.jpg`;
   }
 
   /** Monta a URL que a tela usa para exibir o que chegou. */

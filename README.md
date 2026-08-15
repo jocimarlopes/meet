@@ -135,6 +135,9 @@ O canal também não aceita mensagem de qualquer tamanho, então a remessa vai
 fatiada em pedaços de 48 KB, com controle de fluxo para não estourar o buffer e
 derrubar a conexão.
 
+Clicar na foto abre ela em tela cheia, com botão de baixar. O download sai do
+blob que já está na sua máquina — nada é buscado de volta.
+
 ### Câmera e áudio no meio da conversa
 
 Abrir a câmera depois que a conversa já começou é uma renegociação de WebRTC:
@@ -213,7 +216,7 @@ Mas se você não quer nem esse rastro, use uma janela anônima ou um bloqueador
 | **Até 10 pessoas** | Malha direta, sem servidor de mídia |
 | **Prazo de 30 min** | Com tempo de conversa e restante à vista |
 | **Texto cifrado** | PGP ponta a ponta, com assinatura verificada por mensagem |
-| **Imagem no chat** | Cifrada igual ao texto, direto entre navegadores |
+| **Imagem no chat** | Cifrada igual ao texto, com visualizador e download |
 | **Câmera e microfone** | Independentes — dá para falar sem aparecer |
 | **Quem está falando** | Borda no quadro, por detecção de nível de áudio |
 | **Apelido único** | Verificado de forma atômica no momento da entrada |
@@ -262,7 +265,7 @@ O projeto também é coberto por testes que sobem navegadores de verdade e
 verificam o que teste unitário não alcança — o handshake WebRTC com dois e com
 três participantes, a renegociação da câmera pelo canal direto e,
 principalmente, **o que sai no fio: só bloco PGP, sem o texto puro em lugar
-nenhum**. São 91 verificações somadas.
+nenhum**. São 98 verificações somadas.
 
 ## Limitações conhecidas
 

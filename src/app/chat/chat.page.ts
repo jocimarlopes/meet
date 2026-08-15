@@ -1,4 +1,11 @@
-import { Component, ElementRef, ViewChild, effect, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  ViewChild,
+  effect,
+  inject,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
 
@@ -28,6 +35,8 @@ export class ChatPage {
   chatOpen = false;
   unread = 0;
   sendingImage = false;
+  /** Imagem aberta em tela cheia, ou null. */
+  preview: { url: string; name: string } | null = null;
 
   private lastSeenCount = 0;
   private warnedAboutAudio = false;
@@ -157,8 +166,17 @@ export class ChatPage {
 
   openImage(message: ChatMessage): void {
     if (message.image) {
-      window.open(message.image.url, '_blank');
+      this.preview = message.image;
     }
+  }
+
+  closePreview(): void {
+    this.preview = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closePreview();
   }
 
   async send(): Promise<void> {
