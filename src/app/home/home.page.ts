@@ -1,7 +1,16 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
-import { Subscription, filter, interval, startWith, switchMap } from 'rxjs';
+import {
+  Subscription,
+  filter,
+  fromEvent,
+  interval,
+  merge,
+  startWith,
+  switchMap,
+  throttleTime,
+} from 'rxjs';
 
 import { RoomView, Visibility, isValidNick } from '../core/models/signaling.models';
 import { ChatService } from '../core/services/chat.service';
@@ -9,9 +18,12 @@ import { RoomsService } from '../core/services/rooms.service';
 import { SoundService } from '../core/services/sound.service';
 import { ThemeService } from '../core/services/theme.service';
 
-// Cada consulta é uma invocação de função. Numa aba esquecida aberta, 5 em 5
-// segundos consomem meio milhão de invocações por mês sozinhas.
-const REFRESH_INTERVAL_MS = 15_000;
+// Cada consulta é uma invocação de função, mas quem está olhando a vitrine está
+// esperando alguém abrir uma sala: espaçar demais faz a lista parecer quebrada.
+// O que economiza de verdade é não consultar com a aba escondida, logo abaixo.
+const REFRESH_INTERVAL_MS = 5_000;
+/** Evita consulta dupla quando `focus` e `visibilitychange` chegam juntos. */
+const COALESCE_MS = 1_000;
 /** Mesmo teto do `RoomName` no backend — passar disso é rejeitado lá. */
 const ROOM_NAME_MAX = 48;
 
@@ -37,6 +49,8 @@ export class HomePage implements OnDestroy {
   busy = false;
   visibility: Visibility = 'private';
   publicRooms: RoomView[] = [];
+  /** A vitrine só se mostra depois da primeira resposta, cheia ou vazia. */
+  roomsLoaded = false;
   /** Chegou por link de convite: só falta o apelido. */
   invited = false;
 
@@ -92,16 +106,27 @@ export class HomePage implements OnDestroy {
 
   private startPolling(): void {
     this.stopPolling();
-    this.polling = interval(REFRESH_INTERVAL_MS)
+    this.polling = merge(
+      interval(REFRESH_INTERVAL_MS),
+      // Voltar para esta aba ou para esta janela atualiza na hora. Sem isso,
+      // quem alterna entre janelas encara a lista velha até o próximo ciclo —
+      // e conclui, com razão, que a sala do amigo nunca apareceu.
+      fromEvent(document, 'visibilitychange'),
+      fromEvent(window, 'focus'),
+    )
       .pipe(
         startWith(0),
+        throttleTime(COALESCE_MS),
         // Aba escondida não precisa de lista atualizada, e quem esquece a
         // página aberta não deveria custar nada.
         filter(() => !document.hidden),
         switchMap(() => this.rooms.listPublicRooms()),
       )
       .subscribe({
-        next: (rooms) => (this.publicRooms = rooms),
+        next: (rooms) => {
+          this.publicRooms = rooms;
+          this.roomsLoaded = true;
+        },
         // Sem servidor a vitrine só fica vazia; criar sala por link continua
         // valendo, então não vale interromper a tela com erro.
         error: () => setTimeout(() => this.startPolling(), REFRESH_INTERVAL_MS),

@@ -239,7 +239,7 @@ O projeto também é coberto por testes que sobem navegadores de verdade e
 verificam o que teste unitário não alcança — o handshake WebRTC com dois e com
 três participantes, a renegociação da câmera pelo canal direto e,
 principalmente, **o que sai no fio: só bloco PGP, sem o texto puro em lugar
-nenhum**. São 76 verificações somadas.
+nenhum**. São 78 verificações somadas.
 
 ## Limitações conhecidas
 

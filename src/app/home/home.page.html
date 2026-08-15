@@ -90,8 +90,16 @@
       </p>
     </section>
 
-    <section class="card rooms" *ngIf="!invited && publicRooms.length > 0">
+    <!-- Aparece mesmo vazia: sumir por completo faz a lista parecer quebrada
+         para quem está esperando a sala de alguém surgir. -->
+    <section class="card rooms" *ngIf="!invited && roomsLoaded">
       <h2>Salas abertas agora</h2>
+
+      <p class="empty" *ngIf="publicRooms.length === 0">
+        Nenhuma sala pública aberta neste momento. Crie a sua marcando
+        <strong>Pública</strong> — ela aparece aqui para todo mundo.
+      </p>
+
       <button
         class="room"
         type="button"
