@@ -165,7 +165,16 @@
       <ng-template #bubble>
         <div class="body">
           <span class="author" *ngIf="message.kind === 'theirs'">{{ message.nick }}</span>
-          <span class="text">{{ message.text }}</span>
+          <!-- A imagem veio cifrada e virou blob local; abre em aba nova em
+               tamanho cheio, já que a bolha é estreita. -->
+          <img
+            *ngIf="message.image"
+            class="photo"
+            [src]="message.image.url"
+            [alt]="message.image.name"
+            (click)="openImage(message)"
+          />
+          <span class="text" *ngIf="!message.image">{{ message.text }}</span>
           <span class="meta">
             {{ message.at | date: 'HH:mm' }}
             <ion-icon
@@ -181,6 +190,23 @@
   </div>
 
   <footer>
+    <input
+      #fileInput
+      type="file"
+      accept="image/*"
+      hidden
+      (change)="pickImage($event)"
+    />
+    <button
+      class="attach"
+      type="button"
+      title="Enviar imagem"
+      [disabled]="!chat.canSend() || sendingImage"
+      (click)="fileInput.click()"
+    >
+      <ion-spinner *ngIf="sendingImage" name="dots"></ion-spinner>
+      <ion-icon *ngIf="!sendingImage" name="image-outline"></ion-icon>
+    </button>
     <ion-input
       class="composer"
       fill="outline"

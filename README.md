@@ -118,6 +118,23 @@ Cada mensagem é cifrada para todos os participantes de uma vez, num bloco só, 
 **assinada**. Quem recebe verifica a assinatura contra a chave de quem enviou:
 o escudo verde no balão significa que confere.
 
+### Imagem no chat
+
+Uma foto vai pelo mesmo caminho do texto: cifrada com PGP para todos de uma
+vez e entregue pelo canal direto. Nada de upload, nada de link temporário — a
+imagem existe na sua aba e na de quem está na sala, e some junto com ela.
+
+Dois detalhes que não são óbvios. O **tipo e o nome do arquivo ficam dentro da
+parte cifrada**: se viajassem do lado de fora, quem estivesse no caminho saberia
+que você mandou `exame.jpg` sem precisar abrir nada. E a imagem é **reduzida
+antes de sair**, encaixada numa caixa de 1024x768 sem distorcer — numa malha
+cada foto sobe uma vez por participante, então mandar 3 MB numa sala de 10
+seriam 27 MB saindo da sua conexão.
+
+O canal também não aceita mensagem de qualquer tamanho, então a remessa vai
+fatiada em pedaços de 48 KB, com controle de fluxo para não estourar o buffer e
+derrubar a conexão.
+
 ### Câmera e áudio no meio da conversa
 
 Abrir a câmera depois que a conversa já começou é uma renegociação de WebRTC:
@@ -196,6 +213,7 @@ Mas se você não quer nem esse rastro, use uma janela anônima ou um bloqueador
 | **Até 10 pessoas** | Malha direta, sem servidor de mídia |
 | **Prazo de 30 min** | Com tempo de conversa e restante à vista |
 | **Texto cifrado** | PGP ponta a ponta, com assinatura verificada por mensagem |
+| **Imagem no chat** | Cifrada igual ao texto, direto entre navegadores |
 | **Câmera e microfone** | Independentes — dá para falar sem aparecer |
 | **Quem está falando** | Borda no quadro, por detecção de nível de áudio |
 | **Apelido único** | Verificado de forma atômica no momento da entrada |
@@ -235,7 +253,7 @@ projeto.
 npx ng test --watch=false
 ```
 
-São 26 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
+São 30 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
 identidades geradas de verdade, mensagem cifrada para ambas, assinatura
 conferida e a garantia de que quem está fora da lista de destinatários não
 abre nada.
@@ -244,7 +262,7 @@ O projeto também é coberto por testes que sobem navegadores de verdade e
 verificam o que teste unitário não alcança — o handshake WebRTC com dois e com
 três participantes, a renegociação da câmera pelo canal direto e,
 principalmente, **o que sai no fio: só bloco PGP, sem o texto puro em lugar
-nenhum**. São 81 verificações somadas.
+nenhum**. São 91 verificações somadas.
 
 ## Limitações conhecidas
 

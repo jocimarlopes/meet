@@ -7,6 +7,8 @@ import {
   Visibility,
   normalizeNick,
 } from '../models/signaling.models';
+import { ChatPayload, decodePayload, encodePayload } from '../models/chat-payload';
+import { ImageService } from './image.service';
 import { MeshService } from './mesh.service';
 import { MediaKind } from './peer-link';
 import { Identity, PeerIdentity, PgpService } from './pgp.service';
@@ -30,6 +32,8 @@ export interface ChatMessage {
   at: Date;
   /** Assinatura PGP conferida — só relevante em mensagens de outros. */
   verified: boolean;
+  /** Presente quando a mensagem é uma imagem. A URL é local a esta aba. */
+  image?: { url: string; name: string };
 }
 
 /** Um participante como a tela precisa vê-lo. */
@@ -68,6 +72,7 @@ export class ChatService {
   private readonly signaling = inject(SignalingService);
   private readonly mesh = inject(MeshService);
   private readonly sound = inject(SoundService);
+  private readonly images = inject(ImageService);
   private readonly voice = inject(VoiceActivityService);
 
   readonly status = signal<SessionStatus>('idle');
@@ -174,6 +179,8 @@ export class ChatService {
   });
 
   private identity: Identity | null = null;
+  /** Blobs criados para exibir imagens; revogados ao sair da sala. */
+  private objectUrls: string[] = [];
   private readonly peers = new Map<string, PeerIdentity>();
   private visibility: Visibility = 'private';
   private closingOnPurpose = false;
@@ -275,20 +282,64 @@ export class ChatService {
 
   async send(text: string): Promise<void> {
     const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+    await this.enviarPayload({ kind: 'text', text: trimmed }, { text: trimmed });
+  }
+
+  /**
+   * A imagem entra no mesmo bloco PGP do texto e desce pelo mesmo canal direto.
+   * Tipo e nome do arquivo vão **dentro** da parte cifrada: fora dela,
+   * qualquer um no caminho saberia o que você mandou sem abrir nada.
+   */
+  async sendImage(file: File): Promise<void> {
     const recipients = this.connectedPeers();
-    if (!trimmed || !this.identity || recipients.length === 0) {
+    if (!this.identity || recipients.length === 0) {
+      return;
+    }
+
+    const preparada = await this.images.prepare(file);
+    await this.enviarPayload(
+      { kind: 'image', mime: preparada.mime, name: preparada.name, data: preparada.data },
+      {
+        text: preparada.name,
+        image: {
+          url: this.registrarUrl(this.images.toObjectUrl(preparada.mime, preparada.data)),
+          name: preparada.name,
+        },
+      },
+    );
+  }
+
+  private async enviarPayload(
+    payload: ChatPayload,
+    naTela: { text: string; image?: { url: string; name: string } },
+  ): Promise<void> {
+    const recipients = this.connectedPeers();
+    if (!this.identity || recipients.length === 0) {
       return;
     }
 
     // Um bloco só, cifrado para todos: a sala inteira recebe bytes idênticos.
-    const armored = await this.pgp.encryptFor(this.identity, recipients, trimmed);
+    const armored = await this.pgp.encryptFor(
+      this.identity,
+      recipients,
+      encodePayload(payload),
+    );
     this.mesh.broadcast(armored);
     this.push({
       kind: 'mine',
       nick: this.identity.nick,
-      text: trimmed,
       verified: true,
+      ...naTela,
     });
+  }
+
+  /** URLs de blob vazam se ninguém as revoga; a sala guarda e limpa na saída. */
+  private registrarUrl(url: string): string {
+    this.objectUrls.push(url);
+    return url;
   }
 
   async toggleCamera(): Promise<void> {
@@ -464,7 +515,21 @@ export class ChatService {
         sender,
         armored,
       );
-      this.push({ kind: 'theirs', nick: sender.nick, text, verified });
+      const payload = decodePayload(text);
+      if (payload.kind === 'image') {
+        this.push({
+          kind: 'theirs',
+          nick: sender.nick,
+          text: payload.name,
+          verified,
+          image: {
+            url: this.registrarUrl(this.images.toObjectUrl(payload.mime, payload.data)),
+            name: payload.name,
+          },
+        });
+      } else {
+        this.push({ kind: 'theirs', nick: sender.nick, text: payload.text, verified });
+      }
       this.sound.messageReceived();
     } catch {
       this.pushSystem(`Chegou de ${from} uma mensagem que não foi possível decifrar.`);
@@ -558,6 +623,10 @@ export class ChatService {
     this.status.set('idle');
     this.room.set(null);
     this.role.set(null);
+    for (const url of this.objectUrls) {
+      URL.revokeObjectURL(url);
+    }
+    this.objectUrls = [];
     this.messages.set([]);
     this.myNick.set(null);
     this.myFingerprint.set(null);

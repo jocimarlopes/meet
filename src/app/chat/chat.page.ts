@@ -2,7 +2,7 @@ import { Component, ElementRef, ViewChild, effect, inject } from '@angular/core'
 import { Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
 
-import { ChatService, Participant } from '../core/services/chat.service';
+import { ChatMessage, ChatService, Participant } from '../core/services/chat.service';
 import { SoundService } from '../core/services/sound.service';
 import { ThemeService } from '../core/services/theme.service';
 
@@ -27,6 +27,7 @@ export class ChatPage {
   micBusy = false;
   chatOpen = false;
   unread = 0;
+  sendingImage = false;
 
   private lastSeenCount = 0;
   private warnedAboutAudio = false;
@@ -127,6 +128,36 @@ export class ChatPage {
       this.lastSeenCount = this.chat.messages().filter((m) => m.kind !== 'system').length;
       this.unread = 0;
       queueMicrotask(() => this.scrollToBottom());
+    }
+  }
+
+  /** Escolha de arquivo: prepara, cifra e manda pela malha. */
+  async pickImage(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Zera já: escolher a mesma foto duas vezes seguidas não dispara `change`.
+    input.value = '';
+    if (!file || !this.chat.canSend()) {
+      return;
+    }
+
+    this.sendingImage = true;
+    try {
+      await this.chat.sendImage(file);
+      queueMicrotask(() => this.scrollToBottom());
+    } catch (cause) {
+      await this.toast(
+        cause instanceof Error ? cause.message : 'Não foi possível enviar a imagem.',
+        'danger',
+      );
+    } finally {
+      this.sendingImage = false;
+    }
+  }
+
+  openImage(message: ChatMessage): void {
+    if (message.image) {
+      window.open(message.image.url, '_blank');
     }
   }
 

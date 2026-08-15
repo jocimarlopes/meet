@@ -22,7 +22,20 @@ export interface RemoteMediaEvent {
  */
 type ChannelEnvelope =
   | { kind: 'chat'; payload: string }
-  | { kind: 'rtc'; payload: SignalPayload };
+  | { kind: 'rtc'; payload: SignalPayload }
+  // Uma imagem cifrada não cabe numa mensagem só do canal; vai fatiada e é
+  // remontada do outro lado antes de virar `data`.
+  | { kind: 'part'; id: string; seq: number; total: number; payload: string };
+
+/**
+ * Tamanho do pedaço. O SCTP fragmenta sozinho, mas mensagens grandes derrubam
+ * a conexão em algumas combinações de navegador — 48 KB é o tamanho seguro que
+ * todo mundo aceita.
+ */
+const CHUNK_SIZE = 48 * 1024;
+/** Acima disto paramos de empurrar e esperamos o buffer drenar. */
+const BUFFER_ALTO = 1024 * 1024;
+const BUFFER_BAIXO = 256 * 1024;
 
 const CHANNEL_LABEL = 'chat';
 /**
@@ -56,6 +69,11 @@ export class PeerLink {
   /** Candidatos locais esperando para sair em lote. */
   private outgoingCandidates: RTCIceCandidateInit[] = [];
   private batchTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Pedaços esperando o canal drenar. */
+  private readonly fila: ChannelEnvelope[] = [];
+  private drenando = false;
+  /** Pedaços recebidos, por remessa, até completar. */
+  private readonly recebendo = new Map<string, { partes: string[]; faltam: number }>();
 
   private readonly polite: boolean;
   private makingOffer = false;
@@ -183,11 +201,32 @@ export class PeerLink {
     }
   }
 
+  /**
+   * Mensagem pequena sai inteira, como sempre saiu. Grande — uma imagem — é
+   * fatiada e enfileirada, para não estourar o limite do canal nem prender a
+   * interface enquanto os pedaços saem.
+   */
   send(payload: string): void {
     if (!this.isOpen) {
       return;
     }
-    this.sendEnvelope({ kind: 'chat', payload });
+    if (payload.length <= CHUNK_SIZE) {
+      this.sendEnvelope({ kind: 'chat', payload });
+      return;
+    }
+
+    const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const total = Math.ceil(payload.length / CHUNK_SIZE);
+    for (let seq = 0; seq < total; seq += 1) {
+      this.fila.push({
+        kind: 'part',
+        id,
+        seq,
+        total,
+        payload: payload.slice(seq * CHUNK_SIZE, (seq + 1) * CHUNK_SIZE),
+      });
+    }
+    void this.drenar();
   }
 
   addTrack(track: MediaStreamTrack, stream: MediaStream): void {
@@ -218,6 +257,8 @@ export class PeerLink {
     }
     this.outgoingCandidates = [];
     this.queuedCandidates = [];
+    this.fila.length = 0;
+    this.recebendo.clear();
     this.senders.clear();
     this.remoteStreams.clear();
 
@@ -277,6 +318,61 @@ export class PeerLink {
     this.channel?.send(JSON.stringify(envelope));
   }
 
+  /**
+   * Esvazia a fila respeitando o buffer do canal. Sem isso, mandar uma imagem
+   * de uma vez enche o buffer do SCTP e o navegador derruba a conexão.
+   */
+  private async drenar(): Promise<void> {
+    if (this.drenando) {
+      return;
+    }
+    this.drenando = true;
+    try {
+      while (this.fila.length > 0) {
+        const canal = this.channel;
+        if (!canal || canal.readyState !== 'open') {
+          this.fila.length = 0;
+          return;
+        }
+        if (canal.bufferedAmount > BUFFER_ALTO) {
+          await this.esperarBuffer(canal);
+          continue;
+        }
+        this.sendEnvelope(this.fila.shift()!);
+      }
+    } finally {
+      this.drenando = false;
+    }
+  }
+
+  private esperarBuffer(canal: RTCDataChannel): Promise<void> {
+    return new Promise((resolve) => {
+      canal.bufferedAmountLowThreshold = BUFFER_BAIXO;
+      const pronto = () => {
+        canal.removeEventListener('bufferedamountlow', pronto);
+        resolve();
+      };
+      canal.addEventListener('bufferedamountlow', pronto);
+    });
+  }
+
+  /** Junta os pedaços; só emite quando a remessa fecha. */
+  private receberParte(envelope: Extract<ChannelEnvelope, { kind: 'part' }>): void {
+    let remessa = this.recebendo.get(envelope.id);
+    if (!remessa) {
+      remessa = { partes: new Array(envelope.total).fill(''), faltam: envelope.total };
+      this.recebendo.set(envelope.id, remessa);
+    }
+    if (remessa.partes[envelope.seq] === '') {
+      remessa.partes[envelope.seq] = envelope.payload;
+      remessa.faltam -= 1;
+    }
+    if (remessa.faltam === 0) {
+      this.recebendo.delete(envelope.id);
+      this.data.next(remessa.partes.join(''));
+    }
+  }
+
   private attachChannel(channel: RTCDataChannel): void {
     this.channel = channel;
     channel.onopen = () => this.setState('connected');
@@ -290,6 +386,8 @@ export class PeerLink {
       }
       if (envelope.kind === 'chat') {
         this.data.next(envelope.payload);
+      } else if (envelope.kind === 'part') {
+        this.receberParte(envelope);
       } else if (envelope.kind === 'rtc') {
         void this.acceptSignal(envelope.payload);
       }
