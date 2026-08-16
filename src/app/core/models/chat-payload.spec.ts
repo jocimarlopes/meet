@@ -45,3 +45,17 @@ describe('chat payload', () => {
     });
   });
 });
+
+describe('legenda', () => {
+  it('vai e volta como legenda, não como texto', () => {
+    const legenda = { kind: 'caption' as const, text: 'bom dia', final: true };
+    expect(decodePayload(encodePayload(legenda))).toEqual(legenda);
+  });
+
+  it('trecho parcial é distinguido do final', () => {
+    const parcial = decodePayload(
+      encodePayload({ kind: 'caption', text: 'bom di', final: false }),
+    );
+    expect(parcial).toEqual({ kind: 'caption', text: 'bom di', final: false });
+  });
+});

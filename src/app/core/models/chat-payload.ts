@@ -8,7 +8,10 @@
  */
 export type ChatPayload =
   | { kind: 'text'; text: string }
-  | { kind: 'image'; mime: string; name: string; data: string };
+  | { kind: 'image'; mime: string; name: string; data: string }
+  // Legenda do que a pessoa está falando, reconhecida no aparelho dela. Vai
+  // pelo mesmo bloco cifrado do resto: é fala transcrita, não metadado.
+  | { kind: 'caption'; text: string; final: boolean };
 
 /** Marca o formato para o outro lado não adivinhar. */
 const MARKER = 'meetp2p/1';
@@ -50,6 +53,10 @@ export function decodePayload(raw: string): ChatPayload {
       name: typeof objeto['name'] === 'string' ? objeto['name'] : 'imagem',
       data: objeto['data'],
     };
+  }
+
+  if (objeto['kind'] === 'caption' && typeof objeto['text'] === 'string') {
+    return { kind: 'caption', text: objeto['text'], final: objeto['final'] === true };
   }
 
   if (objeto['kind'] === 'text' && typeof objeto['text'] === 'string') {

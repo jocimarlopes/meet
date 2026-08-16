@@ -33,6 +33,22 @@
           <ion-label>Impressões digitais</ion-label>
         </ion-item>
 
+        <ion-item button [detail]="false" (click)="toggleCaptions()" title="Legendas">
+          <ion-icon
+            slot="start"
+            [name]="chat.captionsOn() ? 'chatbox-ellipses' : 'chatbox-ellipses-outline'"
+          ></ion-icon>
+          <ion-label>
+            {{
+              chat.captionsInstalling()
+                ? 'Baixando idioma…'
+                : chat.captionsOn()
+                  ? 'Desligar legendas'
+                  : 'Ligar legendas'
+            }}
+          </ion-label>
+        </ion-item>
+
         <ion-item button [detail]="false" (click)="theme.toggle()" title="Trocar tema">
           <ion-icon slot="start" [name]="theme.isDark ? 'sunny-outline' : 'moon-outline'"></ion-icon>
           <ion-label>{{ theme.isDark ? 'Tema claro' : 'Tema escuro' }}</ion-label>
@@ -229,6 +245,14 @@
     </ion-button>
   </footer>
 </aside>
+
+<!-- Legendas no rodapé do palco, como num filme: quem falou e o que falou.
+     Ficam fora da gaveta de propósito — a fala é da chamada, não do chat. -->
+<div class="legendas" *ngIf="chat.captions().length > 0" [class.shifted]="chatOpen">
+  <p *ngFor="let legenda of chat.captions(); trackBy: trackByNick">
+    <strong>{{ nickBase(legenda.nick) }}:</strong> {{ legenda.text }}
+  </p>
+</div>
 
 <!-- Imagem em tela cheia. Fica fora da gaveta do chat de propósito: a gaveta é
      estreita e a foto merece a tela toda. -->

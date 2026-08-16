@@ -150,6 +150,21 @@ derrubar a conexão.
 Clicar na foto abre ela em tela cheia, com botão de baixar. O download sai do
 blob que já está na sua máquina — nada é buscado de volta.
 
+### Legendas do que está sendo falado
+
+Ligadas no menu de configurações, aparecem no rodapé como numa legenda de
+filme: **quem falou e o que falou**, sumindo sozinhas depois do silêncio.
+
+A parte que importa: **o reconhecimento acontece no seu próprio aparelho**. A
+API de fala do navegador, no modo padrão, manda o áudio para um serviço do
+fabricante — num app que promete que nada sai daqui, seria contradição servida
+de bandeja. Por isso a legenda exige `processLocally` e, se o aparelho não
+souber reconhecer localmente, ela simplesmente não é oferecida.
+
+Cada pessoa transcreve o **próprio** microfone e manda o texto cifrado pelo
+canal direto, junto com as mensagens. Transcrever o áudio dos outros custaria
+uma vez por participante e ainda não diria quem falou.
+
 ### Câmera e áudio no meio da conversa
 
 Abrir a câmera depois que a conversa já começou é uma renegociação de WebRTC:
@@ -237,6 +252,7 @@ Mas se você não quer nem esse rastro, use uma janela anônima ou um bloqueador
 | **Imagem no chat** | Cifrada igual ao texto, com visualizador e download |
 | **Câmera e microfone** | Independentes — dá para falar sem aparecer |
 | **Quem está falando** | Borda no quadro, por detecção de nível de áudio |
+| **Legendas** | Transcrição no próprio aparelho, no estilo de legenda de filme |
 | **Apelido com etiqueta** | `ana#4821`, como no Discord: o nome repete, a identidade não |
 | **Avisos sonoros** | Quando alguém entra e quando chega mensagem |
 | **Tema claro e escuro** | Começa seguindo o sistema, e você pode discordar |
@@ -275,7 +291,7 @@ projeto.
 npx ng test --watch=false
 ```
 
-São 31 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
+São 33 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
 identidades geradas de verdade, mensagem cifrada para ambas, assinatura
 conferida e a garantia de que quem está fora da lista de destinatários não
 abre nada.

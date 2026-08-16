@@ -693,3 +693,42 @@ textarea {
   font-weight: 400;
   font-size: 0.85em;
 }
+
+/* Legendas ao pé do palco, como num filme: leem-se de relance e somem sozinhas.
+   Ficam acima dos controles para não brigar com o polegar. */
+.legendas {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 22;
+  width: min(720px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+  text-align: center;
+
+  @media (min-width: 720px) {
+    &.shifted {
+      left: calc(50% - #{$drawer-width} / 2);
+    }
+  }
+
+  p {
+    margin: 0;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgb(0 0 0 / 0.72);
+    color: #fff;
+    font-size: 1rem;
+    line-height: 1.4;
+    /* Contorno leve: legenda sobre vídeo claro precisa continuar legível. */
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+
+    strong {
+      font-weight: 600;
+      color: #9ec5ff;
+    }
+  }
+}

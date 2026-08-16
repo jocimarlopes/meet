@@ -233,6 +233,31 @@ export class ChatPage {
     }
   }
 
+  /**
+   * Legenda do que você fala, reconhecida no próprio aparelho.
+   *
+   * Se o navegador só souber reconhecer na nuvem, a legenda não é oferecida:
+   * mandar o áudio para o fabricante contradiria o resto do aplicativo.
+   */
+  async toggleCaptions(): Promise<void> {
+    const antes = this.chat.captionsOn();
+    const ligou = await this.chat.toggleCaptions();
+
+    if (!antes && !ligou) {
+      const suporte = await this.chat.captionSupport();
+      await this.toast(
+        suporte === 'unsupported'
+          ? 'Este navegador não sabe transcrever fala.'
+          : 'A legenda precisa de reconhecimento no próprio aparelho, e ele não está disponível aqui.',
+        'warning',
+      );
+      return;
+    }
+    if (ligou) {
+      await this.toast('Legendas ligadas. A transcrição acontece no seu aparelho.', 'success');
+    }
+  }
+
   async toggleCamera(): Promise<void> {
     if (this.cameraBusy || !this.chat.canUseMedia()) {
       return;

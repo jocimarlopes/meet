@@ -10,6 +10,7 @@ import {
 } from '../models/signaling.models';
 import { ChatPayload, decodePayload, encodePayload } from '../models/chat-payload';
 import { CallKeepAliveService } from './call-keepalive.service';
+import { CaptionService } from './caption.service';
 import { ImageService } from './image.service';
 import { MeshService } from './mesh.service';
 import { MediaKind } from './peer-link';
@@ -60,6 +61,10 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 /** Colidir uma vez já é raro; três seguidas é sinal de outro problema. */
 const MAX_TAG_ATTEMPTS = 3;
 const RECONNECT_DELAY_MS = 1_500;
+/** Legenda some depois deste silêncio, como numa legenda de filme. */
+const CAPTION_LIFETIME_MS = 4_000;
+/** O reconhecedor corrige o texto a cada instante; mandar tudo seria rajada. */
+const CAPTION_THROTTLE_MS = 400;
 
 /**
  * Orquestra a sessão: gera as chaves, fala com o signaling e mantém a malha de
@@ -78,6 +83,7 @@ export class ChatService {
   private readonly sound = inject(SoundService);
   private readonly images = inject(ImageService);
   private readonly keepAlive = inject(CallKeepAliveService);
+  private readonly caption = inject(CaptionService);
   private readonly voice = inject(VoiceActivityService);
 
   readonly status = signal<SessionStatus>('idle');
@@ -92,6 +98,15 @@ export class ChatService {
    * mais provável é justamente o apelido repetido.
    */
   readonly pendingInvite = signal<string | null>(null);
+
+  /**
+   * Legenda por pessoa, no estilo de filme: só a fala corrente de cada um.
+   * Some sozinha depois de um tempo em silêncio — legenda velha na tela
+   * atrapalha mais do que ajuda.
+   */
+  readonly captions = signal<{ nick: string; text: string }[]>([]);
+  readonly captionsOn = signal(false);
+  readonly captionsInstalling = this.caption.installing;
 
   readonly myNick = signal<string | null>(null);
   readonly myFingerprint = signal<string | null>(null);
@@ -187,6 +202,8 @@ export class ChatService {
   /** Blobs criados para exibir imagens; revogados ao sair da sala. */
   private objectUrls: string[] = [];
   private readonly peers = new Map<string, PeerIdentity>();
+  private readonly captionTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private ultimaLegendaEm = 0;
   private visibility: Visibility = 'private';
   private closingOnPurpose = false;
   private reconnectAttempts = 0;
@@ -229,6 +246,22 @@ export class ChatService {
 
     this.mesh.remoteMediaAnnouncements.subscribe(({ nick, kind, active }) => {
       this.announceMedia(nick, kind, active);
+    });
+
+    // O que você fala vira legenda no seu aparelho e segue cifrada para os
+    // outros. O texto parcial vai espaçado; o final vai sempre.
+    this.caption.chunks.subscribe(({ text, final }) => {
+      const agora = Date.now();
+      if (!final && agora - this.ultimaLegendaEm < CAPTION_THROTTLE_MS) {
+        return;
+      }
+      this.ultimaLegendaEm = agora;
+
+      const me = this.myNick();
+      if (me) {
+        this.showCaption(me, text);
+      }
+      void this.sendCaption(text, final);
     });
 
     // O serviço de primeiro plano acompanha a conversa: sem ele o Android
@@ -328,6 +361,24 @@ export class ChatService {
     );
   }
 
+  /** Legenda não entra na fila de mensagens: é fala passageira. */
+  private async sendCaption(text: string, final: boolean): Promise<void> {
+    const recipients = this.connectedPeers();
+    if (!this.identity || recipients.length === 0) {
+      return;
+    }
+    try {
+      const armored = await this.pgp.encryptFor(
+        this.identity,
+        recipients,
+        encodePayload({ kind: 'caption', text, final }),
+      );
+      this.mesh.broadcast(armored);
+    } catch {
+      // Legenda é acessório: falhar aqui não pode atrapalhar a conversa.
+    }
+  }
+
   private async enviarPayload(
     payload: ChatPayload,
     naTela: { text: string; image?: { url: string; name: string } },
@@ -356,6 +407,45 @@ export class ChatService {
   private registrarUrl(url: string): string {
     this.objectUrls.push(url);
     return url;
+  }
+
+  /**
+   * Liga a legenda do que **você** fala. Nada de áudio sai do aparelho: o
+   * reconhecimento é local, e o que trafega é o texto, cifrado como o resto.
+   */
+  async toggleCaptions(): Promise<boolean> {
+    if (this.captionsOn()) {
+      this.caption.stop();
+      this.captionsOn.set(false);
+      return false;
+    }
+    const ligou = await this.caption.start();
+    this.captionsOn.set(ligou);
+    return ligou;
+  }
+
+  captionSupport(): ReturnType<CaptionService['support']> {
+    return this.caption.support();
+  }
+
+  /** Mantém só a fala corrente de cada pessoa, e a apaga depois do silêncio. */
+  private showCaption(nick: string, text: string): void {
+    if (!text) {
+      return;
+    }
+    this.captions.update((atuais) => [
+      ...atuais.filter((c) => c.nick !== nick),
+      { nick, text },
+    ]);
+
+    clearTimeout(this.captionTimers.get(nick));
+    this.captionTimers.set(
+      nick,
+      setTimeout(() => {
+        this.captions.update((atuais) => atuais.filter((c) => c.nick !== nick));
+        this.captionTimers.delete(nick);
+      }, CAPTION_LIFETIME_MS),
+    );
   }
 
   async toggleCamera(): Promise<void> {
@@ -578,6 +668,10 @@ export class ChatService {
         armored,
       );
       const payload = decodePayload(text);
+      if (payload.kind === 'caption') {
+        this.showCaption(sender.nick, payload.text);
+        return;
+      }
       if (payload.kind === 'image') {
         this.push({
           kind: 'theirs',
@@ -687,6 +781,14 @@ export class ChatService {
     this.status.set('idle');
     this.room.set(null);
     this.role.set(null);
+    this.caption.stop();
+    this.captionsOn.set(false);
+    for (const timer of this.captionTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.captionTimers.clear();
+    this.captions.set([]);
+
     for (const url of this.objectUrls) {
       URL.revokeObjectURL(url);
     }
