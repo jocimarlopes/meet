@@ -319,49 +319,6 @@ $drawer-width: 360px;
 
 /* --- digitais ------------------------------------------------------------- */
 
-.fingerprints {
-  position: fixed;
-  top: calc(68px + env(safe-area-inset-top));
-  right: calc(14px + env(safe-area-inset-right));
-  z-index: 24;
-  width: min(92vw, 24rem);
-  margin: 0;
-
-  ion-card-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .close {
-    margin: -4px -6px 0 0;
-  }
-
-  .warning {
-    margin: 0 0 16px;
-    font-size: 0.8rem;
-    line-height: 1.5;
-    color: var(--ion-color-medium);
-  }
-
-  .fingerprint {
-    margin-bottom: 12px;
-
-    .who {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--ion-color-medium);
-      margin-bottom: 2px;
-    }
-
-    code {
-      font-size: 0.82rem;
-      word-break: break-all;
-    }
-  }
-}
-
 /* --- gaveta de conversa --------------------------------------------------- */
 
 .chat-drawer {
@@ -605,70 +562,6 @@ $drawer-width: 360px;
   }
 }
 
-/* Visualizador em tela cheia. Clicar no fundo fecha; a barra e a imagem não. */
-.preview {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 16px;
-  background: rgb(0 0 0 / 0.82);
-  cursor: zoom-out;
-
-  img {
-    max-width: 100%;
-    max-height: calc(100% - 70px);
-    border-radius: 10px;
-    object-fit: contain;
-    cursor: default;
-  }
-
-  .preview-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    max-width: 100%;
-    padding: 8px 10px 8px 14px;
-    border-radius: 12px;
-    background: rgb(255 255 255 / 0.12);
-    cursor: default;
-
-    .name {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 0.82rem;
-      color: #f2f5f8;
-    }
-
-    .action {
-      flex: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border: none;
-      border-radius: 9px;
-      background: rgb(255 255 255 / 0.14);
-      color: #f2f5f8;
-      cursor: pointer;
-
-      ion-icon {
-        font-size: 1.15rem;
-      }
-
-      &:hover {
-        background: rgb(255 255 255 / 0.26);
-      }
-    }
-  }
-}
-
 /* Nada da conversa deve escapar por seleção de texto. O FLAG_SECURE fecha o
    print no aplicativo; isto fecha o copiar-e-colar, no app e na web. Campos de
    digitação ficam de fora — sem seleção, digitar vira um castigo. */
@@ -692,43 +585,4 @@ textarea {
   opacity: 0.55;
   font-weight: 400;
   font-size: 0.85em;
-}
-
-/* Legendas ao pé do palco, como num filme: leem-se de relance e somem sozinhas.
-   Ficam acima dos controles para não brigar com o polegar. */
-.legendas {
-  position: fixed;
-  left: 50%;
-  bottom: calc(96px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  z-index: 22;
-  width: min(720px, calc(100vw - 32px));
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  pointer-events: none;
-  text-align: center;
-
-  @media (min-width: 720px) {
-    &.shifted {
-      left: calc(50% - #{$drawer-width} / 2);
-    }
-  }
-
-  p {
-    margin: 0;
-    padding: 8px 14px;
-    border-radius: 10px;
-    background: rgb(0 0 0 / 0.72);
-    color: #fff;
-    font-size: 1rem;
-    line-height: 1.4;
-    /* Contorno leve: legenda sobre vídeo claro precisa continuar legível. */
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
-
-    strong {
-      font-weight: 600;
-      color: #9ec5ff;
-    }
-  }
 }

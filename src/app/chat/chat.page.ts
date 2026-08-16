@@ -19,7 +19,7 @@ import { ThemeService } from '../core/services/theme.service';
 @Component({
   selector: 'app-chat',
   templateUrl: 'chat.page.html',
-  styleUrls: ['chat.page.scss'],
+  styleUrls: ['chat.page.scss', 'chat.page.overlays.scss'],
   standalone: false,
 })
 export class ChatPage {
