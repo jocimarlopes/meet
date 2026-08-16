@@ -19,6 +19,8 @@ public class MainActivity extends BridgeActivity {
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Precisa vir antes do `super`: é assim que a ponte enxerga o plugin.
+        registerPlugin(CallKeepAlivePlugin.class);
         super.onCreate(savedInstanceState);
         getWindow().setFlags(
             WindowManager.LayoutParams.FLAG_SECURE,

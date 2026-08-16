@@ -2,9 +2,13 @@ $drawer-width: 360px;
 
 /* --- pílula da sala e engrenagem ------------------------------------------ */
 
+/* Do Android 15 em diante o app desenha por baixo das barras do sistema, então
+   todo elemento fixo precisa somar o recuo — senão o relógio da sala fica sob a
+   hora do celular e os controles sob a barra de gestos. `env()` vale zero onde
+   não há recorte, então a conta continua certa no desktop. */
 .room-badge {
   position: fixed;
-  top: 14px;
+  top: calc(14px + env(safe-area-inset-top));
   left: 14px;
   z-index: 15;
   padding: 8px 14px;
@@ -58,8 +62,8 @@ $drawer-width: 360px;
 /* Engrenagem e sair, juntos no canto. */
 .corner-actions {
   position: fixed;
-  top: 14px;
-  right: 14px;
+  top: calc(14px + env(safe-area-inset-top));
+  right: calc(14px + env(safe-area-inset-right));
   /* Acima da gaveta: aberta, ela cobre todo o lado direito da tela. */
   z-index: 25;
   display: flex;
@@ -98,8 +102,8 @@ $drawer-width: 360px;
   --background: var(--app-bg);
   --padding-start: 12px;
   --padding-end: 12px;
-  --padding-top: 68px;
-  --padding-bottom: 12px;
+  --padding-top: calc(68px + env(safe-area-inset-top));
+  --padding-bottom: calc(12px + env(safe-area-inset-bottom));
 
   /* Com espaço de sobra, o palco encolhe em vez de ficar atrás da gaveta. */
   @media (min-width: 720px) {
@@ -317,8 +321,8 @@ $drawer-width: 360px;
 
 .fingerprints {
   position: fixed;
-  top: 68px;
-  right: 14px;
+  top: calc(68px + env(safe-area-inset-top));
+  right: calc(14px + env(safe-area-inset-right));
   z-index: 24;
   width: min(92vw, 24rem);
   margin: 0;
@@ -365,6 +369,8 @@ $drawer-width: 360px;
   top: 0;
   right: 0;
   bottom: 0;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
   z-index: 20;
   width: min(100vw, #{$drawer-width});
   display: flex;
@@ -488,8 +494,8 @@ $drawer-width: 360px;
 
 .controls {
   position: fixed;
-  right: 18px;
-  bottom: 18px;
+  right: calc(18px + env(safe-area-inset-right));
+  bottom: calc(18px + env(safe-area-inset-bottom));
   z-index: 25;
   display: flex;
   align-items: center;

@@ -9,6 +9,7 @@ import {
   withTag,
 } from '../models/signaling.models';
 import { ChatPayload, decodePayload, encodePayload } from '../models/chat-payload';
+import { CallKeepAliveService } from './call-keepalive.service';
 import { ImageService } from './image.service';
 import { MeshService } from './mesh.service';
 import { MediaKind } from './peer-link';
@@ -76,6 +77,7 @@ export class ChatService {
   private readonly mesh = inject(MeshService);
   private readonly sound = inject(SoundService);
   private readonly images = inject(ImageService);
+  private readonly keepAlive = inject(CallKeepAliveService);
   private readonly voice = inject(VoiceActivityService);
 
   readonly status = signal<SessionStatus>('idle');
@@ -227,6 +229,13 @@ export class ChatService {
 
     this.mesh.remoteMediaAnnouncements.subscribe(({ nick, kind, active }) => {
       this.announceMedia(nick, kind, active);
+    });
+
+    // O serviço de primeiro plano acompanha a conversa: sem ele o Android
+    // corta o microfone assim que o app vai para trás.
+    effect(() => {
+      const emConversa = ['waiting', 'connecting', 'connected'].includes(this.status());
+      void this.keepAlive.set(emConversa);
     });
 
     // Relógio de baixa frequência, só para a tela mostrar o tempo restante.

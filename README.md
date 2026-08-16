@@ -240,7 +240,7 @@ Mas se você não quer nem esse rastro, use uma janela anônima ou um bloqueador
 | **Apelido com etiqueta** | `ana#4821`, como no Discord: o nome repete, a identidade não |
 | **Avisos sonoros** | Quando alguém entra e quando chega mensagem |
 | **Tema claro e escuro** | Começa seguindo o sistema, e você pode discordar |
-| **App Android** | Código assinado no APK e print de tela bloqueado |
+| **App Android** | Código assinado, print bloqueado e conversa em segundo plano |
 
 ## Stack
 
@@ -293,6 +293,14 @@ existem nele:
 
 **O código para de ser entregue a cada visita.** Vai dentro do APK assinado.
 Fecha o maior furo da versão web.
+
+**A conversa continua em segundo plano.** Dá para sair do app — jogar,
+responder outra mensagem, desligar a tela — sem cair da chamada. Não é
+automático: desde o Android 9, aplicativo em segundo plano não acessa o
+microfone sem um serviço em primeiro plano declarado, e é por isso que uma
+notificação permanente aparece enquanto o áudio está aberto. Medido: sem o
+serviço a chamada morria em menos de 30 segundos; com ele, o áudio chega na
+mesma taxa de antes.
 
 **Print de tela é bloqueado.** Captura, gravação de tela, espelhamento e até a
 miniatura no alternador de aplicativos — tudo sai preto. A conversa não sai

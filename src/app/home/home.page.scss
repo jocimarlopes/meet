@@ -3,8 +3,8 @@
    e por isso os dois compartilham a mesma moldura redonda. */
 .menu-abrir {
   position: fixed;
-  top: 14px;
-  left: 14px;
+  top: calc(14px + env(safe-area-inset-top));
+  left: calc(14px + env(safe-area-inset-left));
   z-index: 10;
   width: 40px;
   height: 40px;
@@ -19,8 +19,8 @@
 
 .theme-toggle {
   position: fixed;
-  top: 14px;
-  right: 14px;
+  top: calc(14px + env(safe-area-inset-top));
+  right: calc(14px + env(safe-area-inset-right));
   z-index: 10;
   width: 40px;
   height: 40px;
@@ -41,8 +41,8 @@
   --color: var(--app-text);
   --padding-start: 20px;
   --padding-end: 20px;
-  --padding-top: 32px;
-  --padding-bottom: 40px;
+  --padding-top: calc(32px + env(safe-area-inset-top));
+  --padding-bottom: calc(40px + env(safe-area-inset-bottom));
 }
 
 /* Com um cartão só, o conteúdo encostado no topo deixa a tela parecendo
