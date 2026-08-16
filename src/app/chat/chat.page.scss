@@ -131,6 +131,16 @@ $drawer-width: 360px;
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* Celular em pé: dois participantes empilham. Lado a lado, cada quadro fica
+     com um terço da largura da tela e sobra tela vazia acima e abaixo — a
+     altura é justamente o que não falta num telefone. */
+  @media (max-width: 600px) and (orientation: portrait) {
+    &[data-count='2'] {
+      grid-template-columns: 1fr;
+      grid-template-rows: repeat(2, 1fr);
+    }
+  }
+
   &[data-count='3'],
   &[data-count='4'] {
     grid-template-columns: repeat(2, 1fr);
