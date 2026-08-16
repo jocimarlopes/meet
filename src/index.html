@@ -22,14 +22,29 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H200ZMPYB4"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+  <!--
+    Google tag (gtag.js), só no site.
 
-    gtag('config', 'G-H200ZMPYB4');
+    Dentro do aplicativo a origem é `https://localhost`, e ali o analytics não
+    entra: um app que promete que nada sai dele não pode abrir conexão com três
+    hosts do Google a cada abertura. De quebra, também não polui o
+    desenvolvimento local nem os testes.
+  -->
+  <script>
+    (function () {
+      var host = location.hostname;
+      if (host === 'localhost' || host === '127.0.0.1') return;
+
+      var tag = document.createElement('script');
+      tag.async = true;
+      tag.src = 'https://www.googletagmanager.com/gtag/js?id=G-H200ZMPYB4';
+      document.head.appendChild(tag);
+
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
+      gtag('js', new Date());
+      gtag('config', 'G-H200ZMPYB4');
+    })();
   </script>
 </head>
 
