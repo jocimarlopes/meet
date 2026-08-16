@@ -8,7 +8,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * APK assinado**, entregues uma vez e verificados pelo sistema.
  */
 const config: CapacitorConfig = {
-  appId: 'io.github.jocimarlopes.jolomeet',
+  appId: 'com.jolosystems.jolomeet',
   appName: 'Jolo Meet',
   // Mesmo `outputPath` que o Angular já usa.
   webDir: 'www',

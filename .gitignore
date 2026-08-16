@@ -68,3 +68,9 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Chave de publicação e sua senha: nunca versionar. Perder o keystore
+# significa não conseguir mais atualizar o app publicado.
+android/keystore.properties
+*.jks
+*.keystore
