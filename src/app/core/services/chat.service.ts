@@ -105,8 +105,20 @@ export class ChatService {
    * atrapalha mais do que ajuda.
    */
   readonly captions = signal<{ nick: string; text: string }[]>([]);
-  /** Transcrever a **própria** fala e transmiti-la aos outros. */
+  /**
+   * Intenção de legendar a própria fala. O reconhecimento só roda de fato
+   * quando o microfone está aberto — ver `captionsRunning`.
+   */
   readonly captionsOn = signal(false);
+  /**
+   * A legenda segue o microfone.
+   *
+   * O reconhecedor abre um fluxo de áudio próprio, independente da faixa que
+   * vai para os outros: com o microfone fechado no aplicativo, ele continuava
+   * ouvindo e transmitindo por escrito o que era dito. Mudo tem que ser mudo,
+   * e por texto é até pior — fica legível.
+   */
+  readonly captionsRunning = computed(() => this.captionsOn() && this.micOn());
   /**
    * Ver as legendas na própria tela. Separado de propósito: ninguém pode
    * impedir outra pessoa de transcrever a própria voz — isso é decisão do
@@ -253,6 +265,15 @@ export class ChatService {
 
     this.mesh.remoteMediaAnnouncements.subscribe(({ nick, kind, active }) => {
       this.announceMedia(nick, kind, active);
+    });
+
+    // O reconhecedor acompanha o microfone: fechou, para de ouvir.
+    effect(() => {
+      if (this.captionsRunning()) {
+        void this.caption.start();
+      } else {
+        this.caption.stop();
+      }
     });
 
     // O que você fala vira legenda no seu aparelho e segue cifrada para os
@@ -422,9 +443,14 @@ export class ChatService {
    */
   async toggleCaptions(): Promise<boolean> {
     if (this.captionsOn()) {
-      this.caption.stop();
       this.captionsOn.set(false);
       return false;
+    }
+    // Com o microfone fechado, guarda a intenção: o reconhecimento sobe
+    // sozinho quando ele abrir.
+    if (!this.micOn()) {
+      this.captionsOn.set(true);
+      return true;
     }
     const ligou = await this.caption.start();
     this.captionsOn.set(ligou);

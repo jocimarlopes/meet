@@ -241,6 +241,16 @@ export class ChatPage {
    */
   async toggleCaptions(): Promise<void> {
     const antes = this.chat.captionsOn();
+
+    // Baixar o modelo leva um tempo e não dá retorno nenhum na tela; sem aviso,
+    // parece que o botão não funcionou.
+    if (!antes && (await this.chat.captionSupport()) === 'downloadable') {
+      await this.toast(
+        'Baixando o idioma para transcrever no seu aparelho…',
+        'primary',
+      );
+    }
+
     const ligou = await this.chat.toggleCaptions();
 
     if (!antes && !ligou) {
@@ -254,7 +264,12 @@ export class ChatPage {
       return;
     }
     if (ligou) {
-      await this.toast('Legendas ligadas. A transcrição acontece no seu aparelho.', 'success');
+      await this.toast(
+        this.chat.micOn()
+          ? 'Legendas ligadas. A transcrição acontece no seu aparelho.'
+          : 'Legendas ligadas: começam quando você abrir o microfone.',
+        'success',
+      );
     }
   }
 

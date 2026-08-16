@@ -165,6 +165,16 @@ Cada pessoa transcreve o **próprio** microfone e manda o texto cifrado pelo
 canal direto, junto com as mensagens. Transcrever o áudio dos outros custaria
 uma vez por participante e ainda não diria quem falou.
 
+**A legenda segue o microfone.** O reconhecedor abre um fluxo de áudio próprio,
+independente da faixa que vai para os outros — com o microfone fechado, ele
+continuava ouvindo e transmitindo por escrito o que era dito. Mudo tem que ser
+mudo, e por texto é até pior: fica legível.
+
+**Um idioma por vez.** O modelo local é um pacote por língua, e a API não
+aceita lista. Frase misturada sai errada, e isso não tem conserto do nosso
+lado. O app usa o idioma do aparelho quando há modelo local para ele, e cai no
+português quando não há.
+
 São dois controles separados, e a separação é proposital: **legendar a própria
 fala** e **ver legendas na tela**. Ninguém pode impedir outra pessoa de
 transcrever a própria voz — isso acontece no aparelho dela, e um botão de "sala

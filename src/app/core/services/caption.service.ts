@@ -9,7 +9,16 @@ export interface CaptionChunk {
 
 export type CaptionSupport = 'no-device' | 'downloadable' | 'ready' | 'unsupported';
 
-const LANG = 'pt-BR';
+/**
+ * O reconhecimento é de **um** idioma por vez — a API não aceita lista, e o
+ * modelo local é um pacote por língua. Frase misturada sai errada, e isso não
+ * tem conserto do nosso lado: o motor vai forçar o que ouviu na fonética da
+ * língua escolhida.
+ *
+ * Então tentamos o idioma do aparelho e caímos no português quando ele não
+ * estiver disponível localmente.
+ */
+const PADRAO = 'pt-BR';
 
 /**
  * Legenda do que **você** fala, reconhecida no próprio aparelho.
@@ -32,6 +41,7 @@ export class CaptionService {
 
   private recognition: SpeechRecognition | null = null;
   private querendoOuvir = false;
+  private idiomaEscolhido: string | null = null;
 
   private get Motor(): typeof SpeechRecognition | null {
     return (
@@ -43,6 +53,31 @@ export class CaptionService {
     );
   }
 
+  /** Idioma da legenda: o do aparelho, se houver modelo local; senão, o padrão. */
+  async language(): Promise<string> {
+    if (this.idiomaEscolhido) {
+      return this.idiomaEscolhido;
+    }
+    const Motor = this.Motor;
+    const doAparelho = navigator.language;
+    if (Motor?.available && doAparelho && !doAparelho.startsWith('pt')) {
+      try {
+        const estado = await Motor.available({
+          langs: [doAparelho],
+          processLocally: true,
+        });
+        if (estado === 'available' || estado === 'downloadable') {
+          this.idiomaEscolhido = doAparelho;
+          return doAparelho;
+        }
+      } catch {
+        // Cai no padrão.
+      }
+    }
+    this.idiomaEscolhido = PADRAO;
+    return PADRAO;
+  }
+
   /** O que dá para fazer neste navegador, antes de prometer qualquer coisa. */
   async support(): Promise<CaptionSupport> {
     const Motor = this.Motor;
@@ -50,7 +85,10 @@ export class CaptionService {
       return 'unsupported';
     }
     try {
-      const estado = await Motor.available({ langs: [LANG], processLocally: true });
+      const estado = await Motor.available({
+        langs: [await this.language()],
+        processLocally: true,
+      });
       if (estado === 'available') return 'ready';
       if (estado === 'downloadable' || estado === 'downloading') return 'downloadable';
       return 'no-device';
@@ -67,7 +105,10 @@ export class CaptionService {
     }
     this.installing.set(true);
     try {
-      return await Motor.install({ langs: [LANG], processLocally: true });
+      return await Motor.install({
+        langs: [await this.language()],
+        processLocally: true,
+      });
     } catch {
       return false;
     } finally {
@@ -90,7 +131,7 @@ export class CaptionService {
     }
 
     const motor = new Motor();
-    motor.lang = LANG;
+    motor.lang = await this.language();
     motor.continuous = true;
     motor.interimResults = true;
     // A regra da casa: nada de áudio saindo para reconhecimento remoto.
