@@ -49,6 +49,21 @@
           </ion-label>
         </ion-item>
 
+        <ion-item
+          button
+          [detail]="false"
+          (click)="chat.toggleCaptionsVisible()"
+          title="Ver legendas"
+        >
+          <ion-icon
+            slot="start"
+            [name]="chat.captionsVisible() ? 'eye-outline' : 'eye-off-outline'"
+          ></ion-icon>
+          <ion-label>
+            {{ chat.captionsVisible() ? 'Ocultar legendas' : 'Mostrar legendas' }}
+          </ion-label>
+        </ion-item>
+
         <ion-item button [detail]="false" (click)="theme.toggle()" title="Trocar tema">
           <ion-icon slot="start" [name]="theme.isDark ? 'sunny-outline' : 'moon-outline'"></ion-icon>
           <ion-label>{{ theme.isDark ? 'Tema claro' : 'Tema escuro' }}</ion-label>

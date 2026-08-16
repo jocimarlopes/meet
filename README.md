@@ -165,6 +165,12 @@ Cada pessoa transcreve o **próprio** microfone e manda o texto cifrado pelo
 canal direto, junto com as mensagens. Transcrever o áudio dos outros custaria
 uma vez por participante e ainda não diria quem falou.
 
+São dois controles separados, e a separação é proposital: **legendar a própria
+fala** e **ver legendas na tela**. Ninguém pode impedir outra pessoa de
+transcrever a própria voz — isso acontece no aparelho dela, e um botão de "sala
+sem legenda" seria cadeado sem porta. Mas cada um decide o que ocupa a própria
+tela.
+
 ### Câmera e áudio no meio da conversa
 
 Abrir a câmera depois que a conversa já começou é uma renegociação de WebRTC:

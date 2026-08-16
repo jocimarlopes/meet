@@ -105,7 +105,14 @@ export class ChatService {
    * atrapalha mais do que ajuda.
    */
   readonly captions = signal<{ nick: string; text: string }[]>([]);
+  /** Transcrever a **própria** fala e transmiti-la aos outros. */
   readonly captionsOn = signal(false);
+  /**
+   * Ver as legendas na própria tela. Separado de propósito: ninguém pode
+   * impedir outra pessoa de transcrever a própria voz — isso é decisão do
+   * aparelho dela —, mas cada um decide o que ocupa a própria tela.
+   */
+  readonly captionsVisible = signal(true);
   readonly captionsInstalling = this.caption.installing;
 
   readonly myNick = signal<string | null>(null);
@@ -428,9 +435,19 @@ export class ChatService {
     return this.caption.support();
   }
 
+  /** Esconde ou mostra as legendas na própria tela, sem afetar os outros. */
+  toggleCaptionsVisible(): boolean {
+    const visivel = !this.captionsVisible();
+    this.captionsVisible.set(visivel);
+    if (!visivel) {
+      this.captions.set([]);
+    }
+    return visivel;
+  }
+
   /** Mantém só a fala corrente de cada pessoa, e a apaga depois do silêncio. */
   private showCaption(nick: string, text: string): void {
-    if (!text) {
+    if (!text || !this.captionsVisible()) {
       return;
     }
     this.captions.update((atuais) => [
