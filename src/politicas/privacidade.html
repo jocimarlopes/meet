@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Política de Privacidade — Jolo Meet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Política de privacidade do Jolo Meet: o que o aplicativo recebe, o que não recebe e por quanto tempo." />
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg" />
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0 auto; padding: 40px 20px 80px; max-width: 720px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.65; color: #1b2027; background: #f4f6f9;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { color: #f2f5f8; background: #0d0f12; }
+      .card { background: #16191d; border-color: rgba(255,255,255,.09); }
+      td, th { border-color: rgba(255,255,255,.12); }
+    }
+    h1 { font-size: 1.7rem; letter-spacing: -.01em; margin: 0 0 6px; }
+    h2 { font-size: 1.05rem; margin: 34px 0 10px; }
+    .sub { color: #59636e; margin: 0 0 28px; font-size: .92rem; }
+    .card {
+      background: #fff; border: 1px solid rgba(0,0,0,.1); border-radius: 14px;
+      padding: 18px 20px; margin: 22px 0;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid rgba(0,0,0,.1); vertical-align: top; }
+    th { font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; color: #7c8794; }
+    a { color: #3880ff; }
+    footer { margin-top: 40px; font-size: .85rem; color: #7c8794; }
+  </style>
+</head>
+<body>
+  <h1>Política de Privacidade</h1>
+  <p class="sub">Jolo Meet · última atualização em 16 de agosto de 2026</p>
+
+  <p>
+    O Jolo Meet é um aplicativo de conversa em que as mensagens, as imagens, o
+    áudio e o vídeo vão <strong>direto de um aparelho para o outro</strong>.
+    Não passam por servidor, não são armazenados e não têm cópia em lugar
+    nenhum. Esta política existe para dizer, sem rodeio, o pouco que o serviço
+    recebe e por quanto tempo.
+  </p>
+
+  <h2>Não pedimos cadastro</h2>
+  <p>
+    Não há conta, e não pedimos e-mail, telefone, nome, documento nem data de
+    nascimento. Para entrar numa sala você escolhe um apelido no momento — que
+    pode ser qualquer coisa e não precisa te identificar.
+  </p>
+
+  <h2>O que o servidor de apresentação recebe</h2>
+  <p>
+    Para duas pessoas se acharem, existe um servidor que apenas as apresenta.
+    Ele recebe o mínimo necessário para isso:
+  </p>
+
+  <div class="card">
+    <table>
+      <tr>
+        <th>Dado</th><th>Para quê</th><th>Por quanto tempo</th>
+      </tr>
+      <tr>
+        <td>O apelido escolhido</td>
+        <td>Garantir que duas pessoas não usem o mesmo nome na sala</td>
+        <td>Enquanto a sala existir, no máximo 30 minutos</td>
+      </tr>
+      <tr>
+        <td>A chave pública gerada no seu aparelho</td>
+        <td>Entregar aos outros participantes para que possam cifrar para você</td>
+        <td>Enquanto a sala existir, no máximo 30 minutos</td>
+      </tr>
+      <tr>
+        <td>O identificador da sala e o assunto, se ela for pública</td>
+        <td>Montar a lista de salas abertas</td>
+        <td>Enquanto a sala existir, no máximo 30 minutos</td>
+      </tr>
+      <tr>
+        <td>Endereço IP</td>
+        <td>Inerente a qualquer conexão de internet; usado para transportar os dados e não é guardado em registro permanente</td>
+        <td>Não armazenado</td>
+      </tr>
+    </table>
+  </div>
+
+  <p>
+    Passado o prazo — ou assim que todo mundo sai —, a sala desaparece
+    sozinha, com tudo que havia nela. Não existe banco de dados de conversas
+    porque não existe conversa guardada.
+  </p>
+
+  <h2>O que o servidor nunca recebe</h2>
+  <p>
+    Suas mensagens, suas imagens, seu áudio e seu vídeo. Eles são cifrados no
+    seu aparelho e trafegam por conexão direta com os outros participantes.
+    Nem o operador do serviço, com acesso total à infraestrutura, consegue
+    lê-los.
+  </p>
+
+  <h2>Chaves de criptografia</h2>
+  <p>
+    Ao entrar numa sala, seu aparelho gera um par de chaves PGP novo. A chave
+    privada fica somente na memória do aplicativo e nunca é enviada a lugar
+    algum; ela desaparece quando você sai. Só a parte pública é compartilhada,
+    e é com ela que os outros cifram as mensagens destinadas a você.
+  </p>
+
+  <h2>Câmera e microfone</h2>
+  <p>
+    O aplicativo pede acesso à câmera e ao microfone apenas quando você toca
+    para ligá-los, e o fluxo vai direto para os outros participantes. Nada é
+    gravado, nada é enviado para nós e nada fica no aparelho depois da
+    conversa.
+  </p>
+
+  <h2>Medição de uso</h2>
+  <p>
+    <strong>O aplicativo Android não tem nenhum serviço de análise.</strong>
+    Ele não mede sua navegação e não abre conexão com nenhum terceiro —
+    conversa só com o servidor de apresentação.
+  </p>
+  <p>
+    O <em>site</em> jolomeet (versão web) usa Google Analytics para contar
+    acessos, o que significa que o Google registra o endereço IP de quem visita
+    a página. Isso não alcança as conversas, que continuam cifradas e diretas.
+    Se preferir evitar até esse registro, use o aplicativo ou uma janela
+    anônima com bloqueador.
+  </p>
+
+  <h2>Não vendemos e não compartilhamos</h2>
+  <p>
+    Não há publicidade, não há venda de dados e não há compartilhamento com
+    terceiros. Não temos o que vender: o que passa pelo servidor é um apelido e
+    uma chave pública que somem em meia hora.
+  </p>
+
+  <h2>Seus direitos</h2>
+  <p>
+    Como não existe cadastro nem histórico, não há perfil a consultar, corrigir
+    ou excluir. Fechar o aplicativo já elimina tudo que existia da sua sessão.
+    Se ainda assim quiser fazer um pedido relacionado à Lei Geral de Proteção
+    de Dados, é só escrever para o contato abaixo.
+  </p>
+
+  <h2>Crianças</h2>
+  <p>
+    O aplicativo não é direcionado a menores de 13 anos e não coleta
+    intencionalmente dados de crianças.
+  </p>
+
+  <h2>Limites que preferimos declarar</h2>
+  <p>
+    O bloqueio de captura de tela do aplicativo impede print, gravação e
+    espelhamento pelo sistema, mas não impede um aparelho com root nem uma
+    câmera apontada para a tela. E o áudio e o vídeo trafegam cifrados pelo
+    padrão do WebRTC, que é forte, mas não recebem a camada extra de PGP que o
+    texto recebe.
+  </p>
+
+  <h2>Mudanças nesta política</h2>
+  <p>
+    Se algo mudar, a data no topo muda junto. Alterações relevantes serão
+    anunciadas na descrição do aplicativo na loja.
+  </p>
+
+  <h2>Contato</h2>
+  <p>
+    <a href="mailto:contato@jolosystems.com">contato@jolosystems.com</a>
+  </p>
+
+  <footer>
+    <a href="termos.html">Termos de Uso</a> ·
+    <a href="../">Voltar ao Jolo Meet</a>
+  </footer>
+</body>
+</html>

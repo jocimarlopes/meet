@@ -328,5 +328,9 @@ O APK sai em `android/app/build/outputs/apk/debug/`.
 
 ---
 
+[Política de Privacidade](src/politicas/privacidade.html) ·
+[Termos de Uso](src/politicas/termos.html) — publicados junto com o site, em
+`/politicas/`, e alcançáveis pela tela Sobre.
+
 Feito por [Jocimar Lopes](https://github.com/jocimarlopes). Aberto a
 oportunidades como desenvolvedor.
