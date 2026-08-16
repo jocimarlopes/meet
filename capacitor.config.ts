@@ -17,6 +17,9 @@ const config: CapacitorConfig = {
     // o que libera `getUserMedia`. Com `http` a câmera e o microfone morrem.
     androidScheme: 'https',
   },
+  ios: {
+    scheme: 'Jolo Meet',
+  },
   // Sem `server.allowNavigation` de propósito: nada remoto entra na WebView.
   // Link externo abre no navegador do sistema, fora do app.
 };

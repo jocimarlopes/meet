@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.jolosystems.jolomeet",
+      "sha256_cert_fingerprints": [
+        "18:F1:C3:AF:3E:54:F1:91:FB:88:38:C9:AA:71:48:6F:54:31:FB:28:68:0A:F8:59:58:48:71:6E:C1:66:84:2C"
+      ]
+    }
+  }
+]

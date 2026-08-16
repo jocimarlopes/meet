@@ -20,6 +20,19 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Deep link: link de convite abre o app se instalado, senão vai
+                 para a web. O autoVerify faz o Android checar o assetlinks.json
+                 no domínio e abrir direto, sem perguntar "abrir com…". -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="jocimarlopes.github.io"
+                    android:pathPrefix="/meet/entrar/" />
+            </intent-filter>
         </activity>
 
         <!-- Sem este serviço o Android corta o microfone assim que o app vai

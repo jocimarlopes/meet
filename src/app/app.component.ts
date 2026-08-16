@@ -1,5 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, NgZone, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { MenuController } from '@ionic/angular';
 import { filter } from 'rxjs';
 
@@ -18,6 +20,7 @@ export class AppComponent {
   private readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
   private readonly menu = inject(MenuController);
+  private readonly zone = inject(NgZone);
 
   /**
    * A conversa é tela cheia, com os controles nos cantos. Um menu deslizando
@@ -42,6 +45,21 @@ export class AppComponent {
         this.rotaAtual.set(url);
         this.menuDisabled.set(url.startsWith('/chat'));
       });
+
+    // Deep link: link de convite abre o app em vez do navegador.
+    if (Capacitor.isNativePlatform()) {
+      CapApp.addListener('appUrlOpen', ({ url }) => {
+        // url = https://jocimarlopes.github.io/meet/entrar/CODE
+        try {
+          const rota = new URL(url).pathname.replace(/^\/meet/, '');
+          if (rota.startsWith('/entrar/')) {
+            this.zone.run(() => this.router.navigateByUrl(rota));
+          }
+        } catch {
+          // URL inválida: ignora.
+        }
+      });
+    }
   }
 
   async fechar(): Promise<void> {

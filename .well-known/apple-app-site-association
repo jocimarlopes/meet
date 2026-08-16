@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "ZA5SNPPV5F.com.jolosystems.jolomeet",
+        "paths": ["/meet/entrar/*"]
+      }
+    ]
+  }
+}

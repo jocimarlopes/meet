@@ -41,6 +41,13 @@ jobs:
       # como 404.html, o app inicia e a rota resolve no cliente.
       - run: cp www/index.html www/404.html
 
+      # Deep links: o iOS e o Android verificam estes arquivos no domínio para
+      # abrir o app nativo em vez do navegador. Precisam estar em /.well-known/
+      # na raiz do domínio — no Pages de projeto ficam em /meet/.well-known/,
+      # então é necessário publicar também no repositório do user site
+      # (jocimarlopes.github.io) se quiser que funcionem sem domínio próprio.
+      - run: cp -r .well-known www/.well-known
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: www
