@@ -170,6 +170,13 @@ independente da faixa que vai para os outros — com o microfone fechado, ele
 continuava ouvindo e transmitindo por escrito o que era dito. Mudo tem que ser
 mudo, e por texto é até pior: fica legível.
 
+**Onde funciona hoje: só no Chrome de computador.** É o único navegador que
+transcreve sem mandar o áudio para fora. No Safari e no iOS a API existe, mas
+só no modo que envia o áudio para a Apple — e aí a legenda não é oferecida, em
+vez de quebrar a promessa em silêncio. No aplicativo Android a API aparece mas
+não tem implementação por baixo: chamá-la derruba a WebView, então ela é
+bloqueada antes da chamada.
+
 **Um idioma por vez.** O modelo local é um pacote por língua, e a API não
 aceita lista. Frase misturada sai errada, e isso não tem conserto do nosso
 lado. O app usa o idioma do aparelho quando há modelo local para ele, e cai no

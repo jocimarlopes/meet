@@ -257,7 +257,7 @@ export class ChatPage {
       const suporte = await this.chat.captionSupport();
       await this.toast(
         suporte === 'unsupported'
-          ? 'Este navegador não sabe transcrever fala.'
+          ? 'Legendas só funcionam no Chrome de computador por enquanto: é o único que transcreve sem mandar seu áudio para fora.'
           : 'A legenda precisa de reconhecimento no próprio aparelho, e ele não está disponível aqui.',
         'warning',
       );

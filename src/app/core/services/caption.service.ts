@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { Subject } from 'rxjs';
 
 /** Um trecho reconhecido. `final` marca o que o motor não vai mais corrigir. */
@@ -43,7 +44,26 @@ export class CaptionService {
   private querendoOuvir = false;
   private idiomaEscolhido: string | null = null;
 
+  /**
+   * A WebView do Android é o caso perigoso.
+   *
+   * Ela expõe `available()` e `install()` em JavaScript, mas não implementa a
+   * interface por baixo: chamar qualquer uma delas dispara um IPC inválido, o
+   * Chromium mata o processo de renderização — e leva o aplicativo junto.
+   * Medido no emulador, com o log do sistema dizendo
+   * "No binder found for interface media.mojom.OnDeviceSpeechRecognition".
+   *
+   * Não dá para descobrir isso testando a função, porque ela existe. Só dá
+   * para não chamar.
+   */
+  private get emWebView(): boolean {
+    return Capacitor.isNativePlatform() || / wv\)/.test(navigator.userAgent);
+  }
+
   private get Motor(): typeof SpeechRecognition | null {
+    if (this.emWebView) {
+      return null;
+    }
     return (
       (window as unknown as { SpeechRecognition?: typeof SpeechRecognition })
         .SpeechRecognition ??
