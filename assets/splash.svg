@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732">
+  <!-- Quadrado grande porque o sistema recorta pelo centro em cada proporção
+       de tela. Marca e nome ficam perto do centro para nunca serem cortados. -->
+  <rect width="2732" height="2732" fill="#3880ff" />
+  <g transform="translate(1366 1240) scale(13) translate(-34.5 -28.5)">
+    <path d="M20 22v-3a8 8 0 0 1 16 0v3" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
+    <rect x="11" y="22" width="34" height="24" rx="6" fill="#ffffff" />
+    <path d="M49 28.5 58 24v16l-9-4.5z" fill="#ffffff" />
+  </g>
+  <text x="1366" y="1720" text-anchor="middle" fill="rgba(255,255,255,.92)"
+        font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+        font-size="150" font-weight="600" letter-spacing="-2">Jolo Meet</text>
+</svg>

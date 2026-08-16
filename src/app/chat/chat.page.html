@@ -233,14 +233,16 @@
 <div class="preview" *ngIf="preview" (click)="closePreview()">
   <div class="preview-bar" (click)="$event.stopPropagation()">
     <span class="name">{{ preview.name }}</span>
-    <a
+    <button
       class="action"
+      type="button"
       title="Baixar imagem"
-      [href]="preview.url"
-      [download]="preview.name"
+      [disabled]="saving"
+      (click)="downloadImage()"
     >
-      <ion-icon name="download-outline"></ion-icon>
-    </a>
+      <ion-spinner *ngIf="saving" name="dots"></ion-spinner>
+      <ion-icon *ngIf="!saving" name="download-outline"></ion-icon>
+    </button>
     <button class="action" type="button" title="Fechar" (click)="closePreview()">
       <ion-icon name="close-outline"></ion-icon>
     </button>

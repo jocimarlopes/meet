@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Marca da tela de abertura em vetor.
+
+  O ícone do launcher é PNG e, ampliado para o tamanho do splash, sai borrado.
+  Aqui o desenho é o mesmo, mas escala sem perder nitidez em qualquer aparelho.
+
+  A área visível do ícone de abertura é só a parte central, então a figura fica
+  em torno de metade do quadro de 108 — o resto é margem de segurança.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:scaleX="1.15"
+        android:scaleY="1.15"
+        android:translateX="14.325"
+        android:translateY="21.225">
+
+        <!-- Arco do cadeado, sobre o corpo da câmera. -->
+        <path
+            android:pathData="M20,22v-3a8,8 0 0 1 16,0v3"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4"
+            android:strokeLineCap="round" />
+
+        <!-- Corpo da câmera. -->
+        <path
+            android:pathData="M17,22h22a6,6 0 0 1 6,6v12a6,6 0 0 1 -6,6h-22a6,6 0 0 1 -6,-6v-12a6,6 0 0 1 6,-6z"
+            android:fillColor="#FFFFFF" />
+
+        <!-- Lente lateral, que dá a leitura de câmera. -->
+        <path
+            android:pathData="M49,28.5L58,24v16l-9,-4.5z"
+            android:fillColor="#FFFFFF" />
+    </group>
+</vector>

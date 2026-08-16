@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Jolo Meet">
+  <!--
+    Mesma marca da tela inicial, ampliada: câmera com o corpo em forma de
+    cadeado. Diz "chamada de vídeo" e "cifrado" numa figura só, em vez de dois
+    desenhos empilhados que sumiriam no tamanho de ícone.
+  -->
+  <rect width="1024" height="1024" rx="240" fill="#3880ff" />
+
+  <g transform="translate(512 512) scale(11.5) translate(-32 -34)">
+    <!-- Arco do cadeado, sobre o corpo da câmera. -->
+    <path
+      d="M20 22v-3a8 8 0 0 1 16 0v3"
+      fill="none"
+      stroke="#fff"
+      stroke-width="4"
+      stroke-linecap="round"
+    />
+    <!-- Corpo da câmera. -->
+    <rect x="11" y="22" width="34" height="24" rx="6" fill="#fff" />
+    <!-- Lente lateral, que dá a leitura de câmera. -->
+    <path d="M49 28.5 58 24v16l-9-4.5z" fill="#fff" />
+  </g>
+</svg>

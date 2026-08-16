@@ -652,3 +652,20 @@ $drawer-width: 360px;
     }
   }
 }
+
+/* Nada da conversa deve escapar por seleção de texto. O FLAG_SECURE fecha o
+   print no aplicativo; isto fecha o copiar-e-colar, no app e na web. Campos de
+   digitação ficam de fora — sem seleção, digitar vira um castigo. */
+.messages,
+.stage,
+.room-badge {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.composer,
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}

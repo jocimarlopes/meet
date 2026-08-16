@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Jolo Meet">
+  <!-- Camada de frente do ícone adaptativo: só a marca, sem fundo. Fica em
+       torno de 50% da tela porque o Android recorta a borda em formatos
+       diferentes conforme o aparelho — o que passar disso pode ser cortado. -->
+  <g transform="translate(512 512) scale(11) translate(-34.5 -28.5)">
+    <path d="M20 22v-3a8 8 0 0 1 16 0v3" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" />
+    <rect x="11" y="22" width="34" height="24" rx="6" fill="#fff" />
+    <path d="M49 28.5 58 24v16l-9-4.5z" fill="#fff" />
+  </g>
+</svg>

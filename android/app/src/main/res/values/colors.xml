@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mesmo azul da marca em toda a interface. -->
+    <color name="colorPrimary">#3880ff</color>
+    <color name="colorPrimaryDark">#2f6fdd</color>
+    <color name="colorAccent">#3880ff</color>
+
+    <!-- Fundo da tela de abertura. No Android 12+ quem desenha essa tela é o
+         sistema, e ele ignora o `android:background` do tema antigo — daí os
+         atributos `windowSplashScreen*` em styles.xml. -->
+    <color name="splash_background">#3880ff</color>
+</resources>

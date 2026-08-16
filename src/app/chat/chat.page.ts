@@ -9,7 +9,9 @@ import {
 import { Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
 
+import { environment } from '../../environments/environment';
 import { ChatMessage, ChatService, Participant } from '../core/services/chat.service';
+import { DownloadService } from '../core/services/download.service';
 import { SoundService } from '../core/services/sound.service';
 import { ThemeService } from '../core/services/theme.service';
 
@@ -25,6 +27,7 @@ export class ChatPage {
   readonly chat = inject(ChatService);
   readonly sound = inject(SoundService);
   readonly theme = inject(ThemeService);
+  private readonly downloads = inject(DownloadService);
 
   @ViewChild('messageList') private messageList?: ElementRef<HTMLElement>;
 
@@ -37,6 +40,7 @@ export class ChatPage {
   sendingImage = false;
   /** Imagem aberta em tela cheia, ou null. */
   preview: { url: string; name: string } | null = null;
+  saving = false;
 
   private lastSeenCount = 0;
   private warnedAboutAudio = false;
@@ -87,12 +91,17 @@ export class ChatPage {
   /**
    * Link pronto para colar: quem abrir cai direto na tela de apelido.
    *
-   * Montado a partir de `document.baseURI` para respeitar o base href do
-   * deploy — em produção o app vive num subcaminho, não na raiz.
+   * A base vem da configuração, não de `document.baseURI`. Dentro do APK o
+   * `baseURI` é `https://localhost/`, e um convite apontando para ali não
+   * abriria para mais ninguém — o link precisa sempre levar ao endereço
+   * público, mesmo tendo sido criado no aplicativo.
    */
   get inviteLink(): string {
     const id = this.chat.room()?.id;
-    return id ? new URL(`entrar/${id}`, document.baseURI).href : '';
+    if (!id) {
+      return '';
+    }
+    return new URL(`entrar/${id}`, environment.inviteBaseUrl || document.baseURI).href;
   }
 
   /** Tempo de conversa, no formato de cronômetro de chamada. */
@@ -172,6 +181,24 @@ export class ChatPage {
 
   closePreview(): void {
     this.preview = null;
+  }
+
+  /** Única saída autorizada do app: o arquivo da imagem. */
+  async downloadImage(): Promise<void> {
+    if (!this.preview || this.saving) {
+      return;
+    }
+    this.saving = true;
+    try {
+      const destino = await this.downloads.save(this.preview.url, this.preview.name);
+      if (destino) {
+        await this.toast('Imagem salva em Documentos.', 'success');
+      }
+    } catch {
+      await this.toast('Não foi possível salvar a imagem.', 'danger');
+    } finally {
+      this.saving = false;
+    }
   }
 
   @HostListener('document:keydown.escape')

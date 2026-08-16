@@ -3,6 +3,9 @@
 
 export const environment = {
   production: false,
+  // Vazio no desenvolvimento: cai no `document.baseURI`, que é a própria
+  // página servida pelo `ng serve`.
+  inviteBaseUrl: '',
   apiUrl: 'http://localhost:8000/api',
   signalingUrl: 'ws://localhost:8000/api/ws',
 

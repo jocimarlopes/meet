@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- No tema escuro a abertura acompanha o fundo do app, em vez de dar um
+         flash azul antes de uma tela escura. -->
+    <color name="splash_background">#0d0f12</color>
+</resources>
