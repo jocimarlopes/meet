@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
 
 import { environment } from '../../environments/environment';
+import { splitNick } from '../core/models/signaling.models';
 import { ChatMessage, ChatService, Participant } from '../core/services/chat.service';
 import { DownloadService } from '../core/services/download.service';
 import { SoundService } from '../core/services/sound.service';
@@ -133,10 +134,21 @@ export class ChatPage {
     return segundos !== null && segundos <= 300;
   }
 
+  /** Nome sem a etiqueta, para o que é mostrado em destaque. */
+  nickBase(nick: string): string {
+    return splitNick(nick).base;
+  }
+
+  /** A etiqueta, exibida apagada ao lado do nome. */
+  nickTag(nick: string): string {
+    return splitNick(nick).tag;
+  }
+
   /** Iniciais para o quadro de quem está sem câmera. */
   initials(nick: string): string {
-    const parts = nick.trim().split(/\s+/).filter(Boolean);
-    const letters = parts.length > 1 ? parts[0][0] + parts[1][0] : nick.slice(0, 2);
+    const parts = splitNick(nick).base.trim().split(/\s+/).filter(Boolean);
+    const base = splitNick(nick).base;
+    const letters = parts.length > 1 ? parts[0][0] + parts[1][0] : base.slice(0, 2);
     return letters.toLocaleUpperCase();
   }
 

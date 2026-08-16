@@ -237,7 +237,7 @@ Mas se você não quer nem esse rastro, use uma janela anônima ou um bloqueador
 | **Imagem no chat** | Cifrada igual ao texto, com visualizador e download |
 | **Câmera e microfone** | Independentes — dá para falar sem aparecer |
 | **Quem está falando** | Borda no quadro, por detecção de nível de áudio |
-| **Apelido único** | Verificado de forma atômica no momento da entrada |
+| **Apelido com etiqueta** | `ana#4821`, como no Discord: o nome repete, a identidade não |
 | **Avisos sonoros** | Quando alguém entra e quando chega mensagem |
 | **Tema claro e escuro** | Começa seguindo o sistema, e você pode discordar |
 | **App Android** | Código assinado no APK e print de tela bloqueado |

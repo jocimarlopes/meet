@@ -106,7 +106,7 @@
           [name]="tile.micOn ? 'mic' : 'mic-off'"
           [class.live]="tile.speaking"
         ></ion-icon>
-        {{ tile.nick }}<ng-container *ngIf="tile.isSelf"> (você)</ng-container>
+        {{ nickBase(tile.nick) }}<small class="tag">{{ nickTag(tile.nick) }}</small><ng-container *ngIf="tile.isSelf"> (você)</ng-container>
       </span>
 
       <span class="connecting" *ngIf="!tile.connected">conectando…</span>
@@ -136,7 +136,7 @@
         <code>{{ chat.formatFingerprint(chat.myFingerprint()) }}</code>
       </div>
       <div class="fingerprint" *ngFor="let peer of chat.participants(); trackBy: trackByPeer">
-        <span class="who">{{ peer.nick }}</span>
+        <span class="who">{{ nickBase(peer.nick) }}<small class="tag">{{ nickTag(peer.nick) }}</small></span>
         <code>{{ chat.formatFingerprint(peer.fingerprint) }}</code>
       </div>
     </ion-card-content>
@@ -164,7 +164,9 @@
 
       <ng-template #bubble>
         <div class="body">
-          <span class="author" *ngIf="message.kind === 'theirs'">{{ message.nick }}</span>
+          <span class="author" *ngIf="message.kind === 'theirs'">
+            {{ nickBase(message.nick) }}<small class="tag">{{ nickTag(message.nick) }}</small>
+          </span>
           <!-- A imagem veio cifrada e virou blob local; abre em aba nova em
                tamanho cheio, já que a bolha é estreita. -->
           <img

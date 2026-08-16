@@ -679,3 +679,11 @@ textarea {
   user-select: text;
   -webkit-user-select: text;
 }
+
+/* A etiqueta do apelido fica apagada ao lado do nome: ela existe para desempatar
+   dois "ana" na mesma sala, não para ser lida o tempo todo. */
+.tag {
+  opacity: 0.55;
+  font-weight: 400;
+  font-size: 0.85em;
+}

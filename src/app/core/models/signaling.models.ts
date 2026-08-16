@@ -130,11 +130,37 @@ export type ServerMessage =
   | ErrorMessage
   | PongMessage;
 
-/** Mesma regra do backend, para dar retorno antes do round-trip. */
-export const NICK_PATTERN = /^[\w][\w .-]{1,23}$/u;
+/**
+ * Mesma regra do backend, para dar retorno antes do round-trip.
+ *
+ * Aceita letras acentuadas: o backend sempre aceitou (o `\w` do Python é
+ * Unicode), mas o `\w` do JavaScript é ASCII e recusava "João" e "Luís" —
+ * num app em português, quase um insulto.
+ */
+export const NICK_PATTERN = /^[\p{L}\p{N}_][\p{L}\p{N}_ .-]{1,23}$/u;
 
 export function isValidNick(nick: string): boolean {
   return NICK_PATTERN.test(nick.trim());
+}
+
+/**
+ * Etiqueta de quatro dígitos, no estilo do Discord: `ana#4821`.
+ *
+ * Existe para duas pessoas poderem se chamar "ana" na mesma sala — antes a
+ * segunda simplesmente não entrava. O sorteio é do cliente; se der colisão, o
+ * servidor recusa e o cliente sorteia outra.
+ */
+export function withTag(base: string): string {
+  const etiqueta = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+  return `${base.trim()}#${etiqueta}`;
+}
+
+/** Separa o apelido em nome e etiqueta, para a tela poder exibi-los diferente. */
+export function splitNick(nick: string): { base: string; tag: string } {
+  const corte = nick.lastIndexOf('#');
+  return corte > 0
+    ? { base: nick.slice(0, corte), tag: nick.slice(corte) }
+    : { base: nick, tag: '' };
 }
 
 /** Mesma forma canônica do backend, usada para comparar nicks. */

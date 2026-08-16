@@ -6,6 +6,7 @@ import {
   ServerMessage,
   Visibility,
   normalizeNick,
+  withTag,
 } from '../models/signaling.models';
 import { ChatPayload, decodePayload, encodePayload } from '../models/chat-payload';
 import { ImageService } from './image.service';
@@ -55,6 +56,8 @@ export interface Tile {
 }
 
 const MAX_RECONNECT_ATTEMPTS = 3;
+/** Colidir uma vez já é raro; três seguidas é sinal de outro problema. */
+const MAX_TAG_ATTEMPTS = 3;
 const RECONNECT_DELAY_MS = 1_500;
 
 /**
@@ -185,6 +188,7 @@ export class ChatService {
   private visibility: Visibility = 'private';
   private closingOnPurpose = false;
   private reconnectAttempts = 0;
+  private tagAttempts = 0;
 
   /**
    * Handlers assíncronos entram em fila para rodar em ordem. Sem isso, uma
@@ -261,7 +265,10 @@ export class ChatService {
       // Sala sem assunto declarado leva o nome de quem abriu: o servidor exige
       // um nome, e numa sala privada ele já basta.
       name: name.trim() || `Sala de ${nick}`,
-      nick,
+      // O apelido que vai no protocolo é o da identidade, com etiqueta. Mandar
+      // o cru daqui e o etiquetado na reconexão faria o servidor ver duas
+      // pessoas diferentes — e a segunda derrubava a conexão da primeira.
+      nick: this.identity!.nick,
       visibility,
       public_key: this.identity!.publicKeyArmored,
     });
@@ -275,7 +282,7 @@ export class ChatService {
     this.signaling.send({
       type: 'join_room',
       room_id: roomId,
-      nick,
+      nick: this.identity!.nick,
       public_key: this.identity!.publicKeyArmored,
     });
   }
@@ -389,25 +396,39 @@ export class ChatService {
         }
         break;
 
-      case 'room_joined':
+      case 'room_joined': {
         this.room.set(message.room);
         this.reconnectAttempts = 0;
         // Quem entra apenas responde às ofertas de quem já estava.
         for (const peer of message.peers) {
           await this.adoptPeer(peer, { offerer: false });
         }
-        this.status.set(message.peers.length > 0 ? 'connecting' : 'waiting');
+        this.refreshParticipants();
+        // Isto também chega numa reconexão do signaling, com a malha já de pé.
+        // Voltar para "negociando" nesse caso seria mentira na tela — e ela
+        // ficaria presa lá, porque nenhum evento novo de conexão viria.
+        const jaConectado = this.connectedPeers().length > 0;
+        this.status.set(
+          jaConectado ? 'connected' : message.peers.length > 0 ? 'connecting' : 'waiting',
+        );
         break;
+      }
 
-      case 'peer_joined':
+      case 'peer_joined': {
+        // Reconexão do signaling do outro lado reanuncia quem já está aqui.
+        // Anunciar "entrou na sala" de novo, com som, seria ruído.
+        const conhecido = this.mesh.isConnected(message.peer.nick);
         // Quem já estava é quem oferta ao recém-chegado.
         await this.adoptPeer(message.peer, { offerer: true });
-        this.sound.peerJoined();
-        this.pushSystem(`${message.peer.nick} entrou na sala.`);
+        if (!conhecido) {
+          this.sound.peerJoined();
+          this.pushSystem(`${message.peer.nick} entrou na sala.`);
+        }
         if (this.status() === 'waiting') {
           this.status.set('connecting');
         }
         break;
+      }
 
       case 'signal':
         await this.mesh.acceptSignal(message.from, message.data);
@@ -422,6 +443,11 @@ export class ChatService {
         break;
 
       case 'error':
+        // Etiqueta sorteada bateu com a de outra pessoa: sorteia outra e tenta
+        // de novo, em vez de mandar o usuário escolher outro nome.
+        if (message.code === 'nick_taken' && (await this.retryWithNewTag())) {
+          return;
+        }
         this.error.set(message.message);
         this.closingOnPurpose = true;
         this.signaling.disconnect();
@@ -429,6 +455,33 @@ export class ChatService {
         this.reset();
         break;
     }
+  }
+
+  /**
+   * Nova etiqueta e nova tentativa, no máximo algumas vezes.
+   *
+   * Só faz sentido enquanto a pessoa está entrando: já dentro da sala, o mesmo
+   * apelido é ela própria voltando, e o servidor reconhece isso pela chave.
+   */
+  private async retryWithNewTag(): Promise<boolean> {
+    const identity = this.identity;
+    const invite = this.pendingInvite();
+    if (!identity || !invite || this.tagAttempts >= MAX_TAG_ATTEMPTS) {
+      return false;
+    }
+    this.tagAttempts += 1;
+
+    const base = identity.nick.split('#')[0];
+    identity.nick = withTag(base);
+    this.myNick.set(identity.nick);
+
+    this.signaling.send({
+      type: 'join_room',
+      room_id: invite,
+      nick: identity.nick,
+      public_key: identity.publicKeyArmored,
+    });
+    return true;
   }
 
   /**
@@ -610,7 +663,9 @@ export class ChatService {
     this.error.set(null);
     this.status.set('preparing');
 
-    this.identity = await this.pgp.generateIdentity(nick);
+    // A etiqueta acompanha a identidade desde o começo: é ela que vai no
+    // protocolo e é com ela que a reconexão reassume a própria vaga.
+    this.identity = await this.pgp.generateIdentity(withTag(nick));
     this.myNick.set(this.identity.nick);
     this.myFingerprint.set(this.identity.fingerprint);
   }
