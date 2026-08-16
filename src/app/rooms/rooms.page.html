@@ -1,0 +1,56 @@
+<ion-header class="topo">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Salas abertas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button [disabled]="roomsLoading" (click)="refreshRooms()" title="Atualizar a lista">
+        <ion-spinner *ngIf="roomsLoading" name="dots"></ion-spinner>
+        <ion-icon *ngIf="!roomsLoading" slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="salas">
+  <div class="shell">
+    <p class="lead">
+      Salas públicas com vaga, criadas por quem quis aparecer aqui. Ao escolher
+      uma, você informa seu apelido e entra.
+    </p>
+
+    <!-- Aparece sempre, inclusive vazia ou com erro: sumir por completo não
+         deixa distinguir "nenhuma sala" de "isto quebrou". -->
+    <section class="card rooms">
+      <p class="empty" *ngIf="roomsError">
+        Não deu para consultar as salas agora. Toque em atualizar para tentar de
+        novo — criar sala e entrar por link continuam funcionando.
+      </p>
+
+      <p class="empty" *ngIf="!roomsError && publicRooms.length === 0">
+        Nenhuma sala pública aberta neste momento. Crie a sua marcando
+        <strong>Pública</strong> na tela de criar.
+      </p>
+
+      <div class="room-list" *ngIf="publicRooms.length > 0">
+        <button
+          class="room"
+          type="button"
+          *ngFor="let room of publicRooms; trackBy: trackRoom"
+          (click)="enter(room)"
+        >
+          <span class="who">
+            <strong>{{ room.name }}</strong>
+            <small>
+              <!-- Com nome livre, o assunto não diz quem está do outro lado. -->
+              <ng-container *ngIf="room.host_nick">por {{ room.host_nick }} · </ng-container>
+              {{ room.occupants }} de {{ room.capacity }} · {{ vagas(room) }} vagas
+            </small>
+          </span>
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
+    </section>
+  </div>
+</ion-content>

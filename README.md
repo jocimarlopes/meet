@@ -1,10 +1,10 @@
-# Meet P2P
+# Jolo Meet
 
 Sala de vídeo, áudio e chat onde **as mensagens não passam por servidor nenhum**.
 Os navegadores conversam diretamente entre si, e o texto vai cifrado de ponta a
 ponta com PGP.
 
-**[Abrir o Meet P2P →](https://jocimarlopes.github.io/meet/)**
+**[Abrir o Jolo Meet →](https://jocimarlopes.github.io/meet/)**
 
 ![Sala com três participantes, indicador de quem está falando e a conversa aberta](docs/sala.png)
 
@@ -19,6 +19,7 @@ ponta com PGP.
 - [Stack](#stack)
 - [Rodando local](#rodando-local)
 - [Testes](#testes)
+- [Aplicativo Android](#aplicativo-android)
 - [Limitações conhecidas](#limitações-conhecidas)
 
 ---
@@ -26,7 +27,8 @@ ponta com PGP.
 ## O que é
 
 Você cria uma sala, recebe um link e manda para quem quiser. Quem abre escolhe
-um apelido e entra direto — sem cadastro, sem instalar nada, sem app.
+um apelido e entra direto — sem cadastro e sem instalar nada. Há também um
+aplicativo Android, para quem quer print de tela bloqueado e código assinado.
 
 A partir daí os navegadores se conectam **diretamente**, por WebRTC. Texto,
 câmera e áudio trafegam de um para o outro sem tocar em nenhuma
@@ -81,6 +83,14 @@ Na prática isso significa que texto e áudio funcionam bem com a sala cheia, ma
 **vídeo de todos ao mesmo tempo só se sustenta em grupos menores**. Não é
 limitação de código: é o preço de não ter servidor no meio.
 
+### Onde fica cada coisa
+
+A primeira tela faz uma coisa só: abrir uma conversa. O resto vive num menu
+lateral — **Salas**, com a lista das públicas, e **Sobre**, com o texto que
+explica o projeto. Os dois estavam na home e empurravam para baixo a única
+ação que importa ali. Durante a conversa o menu não existe: a chamada é tela
+cheia, e nem o gesto de arrastar da borda o traz.
+
 ### Sala pública ou privada
 
 Na criação você escolhe. **Privada** é o padrão: ela não aparece em lugar nenhum
@@ -94,10 +104,12 @@ número de vagas, e é a única informação que alguém tem antes de entrar. Sa
 privada não pede assunto: ela leva o nome de quem abriu, porque ninguém de fora
 a lê.
 
-A lista fica sempre visível, mesmo vazia — some da tela é o que faz parecer
-quebrada. Ela não se atualiza sozinha em intervalo fixo: carrega ao abrir a
-home, quando você volta para a aba e quando clica em atualizar. Uma página
-esquecida aberta não consome nada.
+A lista fica na tela **Salas** e aparece sempre, mesmo vazia — some da tela é o
+que faz parecer quebrada. Ela não se atualiza sozinha em intervalo fixo:
+carrega ao abrir, quando você volta para a aba e quando clica em atualizar.
+Uma página esquecida aberta não consome nada. Escolher uma sala leva à mesma
+tela de quem chega por link: ela pede o apelido, agora dizendo em qual sala
+você está entrando.
 
 ### Toda sala dura 30 minutos
 
@@ -198,9 +210,15 @@ mensagem existe em texto claro na sua tela. Extensões de navegador, teclado do
 celular e o próprio SO têm acesso. Isso vale para qualquer aplicativo com
 criptografia ponta a ponta, incluindo os famosos.
 
-**O código é rebaixado a cada visita.** Sendo um site, quem controla a
-hospedagem poderia servir uma versão adulterada. Aplicativos nativos mitigam
-isso com binário assinado; um site não tem como.
+**Na web, o código é rebaixado a cada visita.** Quem controla a hospedagem
+poderia servir uma versão adulterada, que leria tudo antes de qualquer cifra —
+nenhuma criptografia dentro do app resolve isso, porque o atacante não quebra a
+cifra, ele *é* o código que cifra.
+
+**É por isso que existe o aplicativo Android.** Lá os arquivos vão dentro do
+APK assinado: entregues uma vez e verificados pelo sistema, em vez de baixados
+a cada abertura. A confiança não some, muda de lugar — passa da hospedagem para
+quem assina e distribui o APK.
 
 **O site tem Google Analytics.** Acessos e navegação são medidos, o que
 significa que o Google vê o IP de quem entra. Isso não alcança as conversas:
@@ -222,6 +240,7 @@ Mas se você não quer nem esse rastro, use uma janela anônima ou um bloqueador
 | **Apelido único** | Verificado de forma atômica no momento da entrada |
 | **Avisos sonoros** | Quando alguém entra e quando chega mensagem |
 | **Tema claro e escuro** | Começa seguindo o sistema, e você pode discordar |
+| **App Android** | Código assinado no APK e print de tela bloqueado |
 
 ## Stack
 
@@ -256,7 +275,7 @@ projeto.
 npx ng test --watch=false
 ```
 
-São 30 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
+São 31 testes, incluindo um ciclo real de cifrar e decifrar com PGP: duas
 identidades geradas de verdade, mensagem cifrada para ambas, assinatura
 conferida e a garantia de que quem está fora da lista de destinatários não
 abre nada.
@@ -265,7 +284,32 @@ O projeto também é coberto por testes que sobem navegadores de verdade e
 verificam o que teste unitário não alcança — o handshake WebRTC com dois e com
 três participantes, a renegociação da câmera pelo canal direto e,
 principalmente, **o que sai no fio: só bloco PGP, sem o texto puro em lugar
-nenhum**. São 98 verificações somadas.
+nenhum**. São 102 verificações somadas.
+
+## Aplicativo Android
+
+A versão web é o caminho fácil; o aplicativo é o caminho seguro. Duas coisas só
+existem nele:
+
+**O código para de ser entregue a cada visita.** Vai dentro do APK assinado.
+Fecha o maior furo da versão web.
+
+**Print de tela é bloqueado.** Captura, gravação de tela, espelhamento e até a
+miniatura no alternador de aplicativos — tudo sai preto. A conversa não sai
+dali, com uma exceção deliberada: baixar uma imagem que você recebeu, que grava
+o arquivo em Documentos.
+
+Não é mágica. `FLAG_SECURE` não vence um aparelho com root nem uma câmera
+apontada para a tela; ele fecha o caminho fácil, que é o do próprio sistema. E
+o sistema operacional continua vendo tudo, como em qualquer aplicativo.
+
+```bash
+npx ng build --configuration production --base-href /
+npx cap sync android
+cd android && ./gradlew assembleDebug   # precisa de Java 21
+```
+
+O APK sai em `android/app/build/outputs/apk/debug/`.
 
 ## Limitações conhecidas
 
@@ -278,6 +322,9 @@ nenhum**. São 98 verificações somadas.
 - **Sem histórico.** Fechou a aba, acabou. É de propósito.
 - **O WebSocket fica aberto durante a conversa** — não para trafegar mensagens,
   mas para avisar quando alguém novo entra.
+- **No aplicativo, a loja vira o ponto de confiança** no lugar da hospedagem.
+  Um APK publicado com build reproduzível deixa qualquer pessoa conferir que o
+  binário corresponde ao código.
 
 ---
 

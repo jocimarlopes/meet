@@ -7,6 +7,14 @@ const routes: Routes = [
     loadChildren: () => import('./home/home.module').then((m) => m.HomePageModule),
   },
   {
+    path: 'salas',
+    loadChildren: () => import('./rooms/rooms.module').then((m) => m.RoomsPageModule),
+  },
+  {
+    path: 'sobre',
+    loadChildren: () => import('./about/about.module').then((m) => m.AboutPageModule),
+  },
+  {
     path: 'chat',
     loadChildren: () => import('./chat/chat.module').then((m) => m.ChatPageModule),
   },

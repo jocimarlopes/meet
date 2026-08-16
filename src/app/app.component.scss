@@ -1,0 +1,55 @@
+.menu {
+  --background: var(--app-surface);
+  --color: var(--app-text);
+}
+
+.menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 20px 18px;
+
+  img {
+    border-radius: 10px;
+  }
+
+  strong {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--app-text);
+  }
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 12px;
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    color: var(--app-text-soft);
+    text-decoration: none;
+    cursor: pointer;
+
+    ion-icon {
+      font-size: 1.15rem;
+    }
+
+    &:hover {
+      background: var(--app-surface-sunken);
+    }
+
+    /* A rota atual fica marcada: sem isso o menu não diz onde você está. */
+    &.on {
+      background: var(--app-surface-sunken);
+      color: var(--app-text);
+      font-weight: 600;
+    }
+  }
+}

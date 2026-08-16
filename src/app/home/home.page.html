@@ -1,3 +1,5 @@
+<ion-menu-button class="menu-abrir" autoHide="false"></ion-menu-button>
+
 <button
   class="theme-toggle"
   type="button"
@@ -8,154 +10,85 @@
 </button>
 
 <ion-content class="welcome" scrollY="true">
-  <div class="shell" [class.wide]="!invited">
+  <div class="shell">
     <header class="brand">
       <img class="logo" src="assets/logo.svg" alt="" width="52" height="52" />
-      <h1>Meet P2P</h1>
+      <h1>Jolo Meet</h1>
       <p>
-        Conversa direta entre navegadores, cifrada ponta a ponta. O servidor só
-        apresenta quem está na sala — depois disso ele sai do caminho.
+        Conversa direta entre navegadores, cifrada ponta a ponta.
       </p>
     </header>
 
     <section class="card invited" *ngIf="invited">
       <ion-icon name="mail-open-outline"></ion-icon>
-      <h2>Você foi convidado</h2>
+      <h2>{{ joiningRoomName || 'Você foi convidado' }}</h2>
       <p>Escolha um apelido e entre. Ele precisa ser diferente dos que já estão lá.</p>
     </section>
 
-    <!-- No desktop os dois cards ficam lado a lado; no celular, empilhados. -->
-    <div class="panels">
-      <section class="card">
-        <label for="nick">Seu apelido</label>
+    <section class="card">
+      <label for="nick">Seu apelido</label>
+      <ion-input
+        id="nick"
+        fill="outline"
+        maxlength="24"
+        autocomplete="off"
+        placeholder="como você aparece na sala"
+        [(ngModel)]="nick"
+        (keyup.enter)="submit()"
+      ></ion-input>
+
+      <ion-note class="hint" [color]="nick && !nickIsValid ? 'danger' : 'medium'">
+        2 a 24 caracteres.
+      </ion-note>
+
+      <div class="visibility" *ngIf="!invited">
+        <button
+          type="button"
+          [class.on]="visibility === 'private'"
+          (click)="visibility = 'private'"
+        >
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          <strong>Privada</strong>
+          <small>só entra quem receber o link</small>
+        </button>
+        <button
+          type="button"
+          [class.on]="visibility === 'public'"
+          (click)="visibility = 'public'"
+        >
+          <ion-icon name="globe-outline"></ion-icon>
+          <strong>Pública</strong>
+          <small>aparece na lista de salas</small>
+        </button>
+      </div>
+
+      <ng-container *ngIf="!invited && visibility === 'public'">
+        <label for="room-name">Assunto da sala</label>
         <ion-input
-          id="nick"
+          id="room-name"
           fill="outline"
-          maxlength="24"
+          maxlength="48"
           autocomplete="off"
-          placeholder="como você aparece na sala"
-          [(ngModel)]="nick"
+          placeholder="sobre o que é a conversa"
+          [(ngModel)]="roomName"
           (keyup.enter)="submit()"
         ></ion-input>
 
-        <ion-note class="hint" [color]="nick && !nickIsValid ? 'danger' : 'medium'">
-          2 a 24 caracteres.
+        <ion-note class="hint" [color]="roomNameIsValid ? 'medium' : 'danger'">
+          Aparece na lista para quem não conhece você. Em branco, vira
+          "Sala de {{ nick || 'seu apelido' }}".
         </ion-note>
+      </ng-container>
 
-        <div class="visibility" *ngIf="!invited">
-          <button
-            type="button"
-            [class.on]="visibility === 'private'"
-            (click)="visibility = 'private'"
-          >
-            <ion-icon name="lock-closed-outline"></ion-icon>
-            <strong>Privada</strong>
-            <small>só entra quem receber o link</small>
-          </button>
-          <button
-            type="button"
-            [class.on]="visibility === 'public'"
-            (click)="visibility = 'public'"
-          >
-            <ion-icon name="globe-outline"></ion-icon>
-            <strong>Pública</strong>
-            <small>aparece na lista de salas abertas</small>
-          </button>
-        </div>
+      <ion-button expand="block" [disabled]="!canSubmit" (click)="submit()">
+        <ion-spinner *ngIf="busy" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!busy" [name]="invited ? 'enter-outline' : 'add-circle-outline'" slot="start"></ion-icon>
+        {{ invited ? 'Entrar na conversa' : 'Criar convite' }}
+      </ion-button>
 
-        <ng-container *ngIf="!invited && visibility === 'public'">
-          <label for="room-name">Assunto da sala</label>
-          <ion-input
-            id="room-name"
-            fill="outline"
-            maxlength="48"
-            autocomplete="off"
-            placeholder="sobre o que é a conversa"
-            [(ngModel)]="roomName"
-            (keyup.enter)="submit()"
-          ></ion-input>
-
-          <ion-note class="hint" [color]="roomNameIsValid ? 'medium' : 'danger'">
-            Aparece na lista para quem não conhece você. Em branco, vira
-            "Sala de {{ nick || 'seu apelido' }}".
-          </ion-note>
-        </ng-container>
-
-        <ion-button expand="block" [disabled]="!canSubmit" (click)="submit()">
-          <ion-spinner *ngIf="busy" name="dots" slot="start"></ion-spinner>
-          <ion-icon *ngIf="!busy" [name]="invited ? 'enter-outline' : 'add-circle-outline'" slot="start"></ion-icon>
-          {{ invited ? 'Entrar na conversa' : 'Criar convite' }}
-        </ion-button>
-
-        <p class="explain" *ngIf="!invited">
-          Cabem 10 pessoas e a sala dura 30 minutos.
-        </p>
-      </section>
-
-      <!-- Aparece sempre, inclusive vazia ou com erro: sumir por completo não
-           deixa distinguir "nenhuma sala" de "isto quebrou". -->
-      <section class="card rooms" *ngIf="!invited">
-        <header class="rooms-head">
-          <h2>Salas abertas agora</h2>
-          <button
-            class="refresh"
-            type="button"
-            title="Atualizar a lista"
-            [disabled]="roomsLoading"
-            (click)="refreshRooms()"
-          >
-            <ion-spinner *ngIf="roomsLoading" name="dots"></ion-spinner>
-            <ion-icon *ngIf="!roomsLoading" name="refresh-outline"></ion-icon>
-          </button>
-        </header>
-
-        <p class="empty" *ngIf="roomsError">
-          Não deu para consultar as salas agora. Toque em atualizar para tentar de
-          novo — criar e entrar por link continua funcionando.
-        </p>
-
-        <p class="empty" *ngIf="!roomsError && publicRooms.length === 0">
-          Nenhuma sala pública aberta neste momento. Crie a sua marcando
-          <strong>Pública</strong> — ela aparece aqui para todo mundo.
-        </p>
-
-        <!-- Rola por dentro: com muita sala, a lista não pode empurrar o resto
-             da página nem desalinhar as duas colunas do desktop. -->
-        <div class="room-list" *ngIf="publicRooms.length > 0">
-          <button
-            class="room"
-            type="button"
-            *ngFor="let room of publicRooms; trackBy: trackRoom"
-            [disabled]="busy"
-            (click)="joinPublic(room)"
-          >
-            <span class="who">
-              <strong>{{ room.name }}</strong>
-              <small>
-                <!-- Com nome livre, o assunto não diz quem está do outro lado. -->
-                <ng-container *ngIf="room.host_nick">por {{ room.host_nick }} · </ng-container>
-                {{ room.occupants }} de {{ room.capacity }} · {{ vagas(room) }} vagas
-              </small>
-            </span>
-            <ion-icon name="chevron-forward-outline"></ion-icon>
-          </button>
-        </div>
-      </section>
-    </div>
-
-    <ul class="facts">
-      <li>
-        <ion-icon name="key-outline"></ion-icon>
-        As chaves nascem nesta aba e nunca saem dela — só a parte pública é trocada.
-      </li>
-      <li>
-        <ion-icon name="eye-off-outline"></ion-icon>
-        Sala privada não aparece em lista nenhuma: só entra quem tem o link.
-      </li>
-      <li>
-        <ion-icon name="trash-outline"></ion-icon>
-        Nada é guardado. Fechou a aba, sumiu tudo.
-      </li>
-    </ul>
+      <p class="explain" *ngIf="!invited">
+        Cabem 10 pessoas e a sala dura 30 minutos.
+      </p>
+    </section>
   </div>
 </ion-content>

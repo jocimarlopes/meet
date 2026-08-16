@@ -1,0 +1,92 @@
+<ion-header class="topo">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Sobre</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="sobre">
+  <div class="shell">
+    <header class="brand">
+      <img class="logo" src="assets/logo.svg" alt="" width="52" height="52" />
+      <h1>Jolo Meet</h1>
+      <p>
+        Conversa direta entre navegadores, cifrada ponta a ponta. O servidor só
+        apresenta quem está na sala — depois disso ele sai do caminho.
+      </p>
+    </header>
+
+    <section class="card">
+      <h2>Como funciona</h2>
+      <p>
+        Você cria uma sala e recebe um link. Quem abre escolhe um apelido e
+        entra. A partir daí os navegadores se conectam <strong>diretamente</strong>,
+        e texto, câmera e áudio trafegam de um para o outro sem tocar em
+        infraestrutura nenhuma.
+      </p>
+      <p>
+        O servidor faz três coisas: guarda a sala, garante que duas pessoas não
+        usem o mesmo apelido e repassa os dados de conexão. Ele nunca vê
+        conteúdo.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>A sala é uma malha</h2>
+      <p>
+        Cabem 10 pessoas, e cada uma mantém uma conexão com cada outra. Não
+        existe servidor de mídia retransmitindo nada — por isso existe um teto,
+        já que o custo cresce ao quadrado. Texto e áudio aguentam a sala cheia;
+        vídeo de todos ao mesmo tempo só se sustenta em grupos menores.
+      </p>
+      <p>
+        Toda sala dura <strong>30 minutos</strong>, contados da criação. O
+        limite existe porque nada é guardado: uma sala eterna seria só um
+        recurso parado.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>O que protege</h2>
+      <ul class="facts">
+        <li>
+          <ion-icon name="key-outline"></ion-icon>
+          As chaves nascem nesta aba e nunca saem dela — só a parte pública é
+          trocada.
+        </li>
+        <li>
+          <ion-icon name="eye-off-outline"></ion-icon>
+          Sala privada não aparece em lista nenhuma: só entra quem tem o link.
+        </li>
+        <li>
+          <ion-icon name="trash-outline"></ion-icon>
+          Nada é guardado. Fechou a aba, sumiu tudo.
+        </li>
+        <li>
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          Cada mensagem vai assinada, e o escudo no balão significa assinatura
+          conferida contra a chave de quem enviou.
+        </li>
+      </ul>
+    </section>
+
+    <section class="card aviso">
+      <h2>O que não protege</h2>
+      <p>
+        Quem entrega a chave pública de um lado ao outro é o servidor. Um
+        servidor malicioso poderia entregar a dele para os dois e ficar no meio.
+        Por isso as telas mostram a <strong>impressão digital</strong> da chave:
+        comparar esses códigos por outro canal — uma ligação, pessoalmente — é o
+        que fecha esse buraco.
+      </p>
+      <p>
+        Áudio e vídeo vão cifrados por DTLS-SRTP, mas não têm a camada PGP do
+        texto. E depois de decifrada, a mensagem existe em texto claro na sua
+        tela: o navegador e o sistema operacional veem tudo, como em qualquer
+        aplicativo com criptografia ponta a ponta.
+      </p>
+    </section>
+  </div>
+</ion-content>

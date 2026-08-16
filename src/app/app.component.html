@@ -1,3 +1,25 @@
 <ion-app>
-  <ion-router-outlet></ion-router-outlet>
+  <ion-menu contentId="main-content" [disabled]="menuDisabled()">
+    <ion-content class="menu">
+      <header class="menu-brand">
+        <img src="assets/logo.svg" alt="" width="40" height="40" />
+        <strong>Jolo Meet</strong>
+      </header>
+
+      <nav>
+        <a
+          *ngFor="let link of links"
+          [routerLink]="link.rota"
+          routerDirection="root"
+          [class.on]="rotaAtual().startsWith(link.rota)"
+          (click)="fechar()"
+        >
+          <ion-icon [name]="link.icone"></ion-icon>
+          {{ link.titulo }}
+        </a>
+      </nav>
+    </ion-content>
+  </ion-menu>
+
+  <ion-router-outlet id="main-content"></ion-router-outlet>
 </ion-app>
